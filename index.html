@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="tl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -446,6 +446,11 @@
             font-weight: bold;
         }
         
+        .results-table .btx-section-row {
+            background: #e3f2fd;
+            font-weight: bold;
+        }
+        
         .export-btn {
             width: 100%;
             padding: 15px;
@@ -590,8 +595,8 @@
                 </div>
                 
                 <div class="info-box">
-                    <strong>ℹ️ Dominant Component:</strong> The selected glycol (MEG/DEG/TEG) is calculated by difference (100% - impurities). 
-                    This field is DISABLED and automatic calculated.
+                    <strong>ℹ️ Dominant Component:</strong> The selected glycol (MEG/DEG/TEG) will be calculated by difference (100% - impurities). 
+                    Its field is DISABLED and automatically calculated.
                 </div>
 
                 <div class="field-order-note" id="fieldOrderNote">
@@ -909,6 +914,14 @@
         function displayResults() {
             const container = document.getElementById('resultsTableContainer');
             
+            const benzeneWt = parseFloat(document.getElementById('benzeneWt').value) || 0;
+            const tolueneWt = parseFloat(document.getElementById('tolueneWt').value) || 0;
+            const xyleneWt = parseFloat(document.getElementById('xyleneWt').value) || 0;
+            
+            const benzeneMol = Math.round((benzeneWt / 78.114) * 10) / 10;
+            const tolueneMol = Math.round((tolueneWt / 92.141) * 10) / 10;
+            const xyleneMol = Math.round((xyleneWt / 106.17) * 10) / 10;
+            
             let tableHTML = `
                 <table class="results-table">
                     <thead>
@@ -1004,6 +1017,33 @@
                             <td>% glycol in sample</td>
                             ${resultsData.map(r => `<td>${r.glycolInSample.toFixed(4)}</td>`).join('')}
                         </tr>
+                        <tr class="btx-section-row">
+                            <td colspan="${resultsData.length + 1}"><strong>BTX Results</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Benzene wt %</td>
+                            <td colspan="${resultsData.length}">${benzeneWt.toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td>Benzene mol %</td>
+                            <td colspan="${resultsData.length}">${benzeneMol.toFixed(1)}</td>
+                        </tr>
+                        <tr>
+                            <td>Toluene wt %</td>
+                            <td colspan="${resultsData.length}">${tolueneWt.toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td>Toluene mol %</td>
+                            <td colspan="${resultsData.length}">${tolueneMol.toFixed(1)}</td>
+                        </tr>
+                        <tr>
+                            <td>Xylene wt %</td>
+                            <td colspan="${resultsData.length}">${xyleneWt.toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td>Xylene mol %</td>
+                            <td colspan="${resultsData.length}">${xyleneMol.toFixed(1)}</td>
+                        </tr>
                     </tbody>
                 </table>
                 
@@ -1021,7 +1061,6 @@
         async function exportToExcel() {
             const projectNumber = document.getElementById('projectNumber').value || 'N/A';
             
-            // Get BTX values
             const benzeneWt = parseFloat(document.getElementById('benzeneWt').value) || 0;
             const tolueneWt = parseFloat(document.getElementById('tolueneWt').value) || 0;
             const xyleneWt = parseFloat(document.getElementById('xyleneWt').value) || 0;
@@ -1034,52 +1073,51 @@
             const workbook = new ExcelJS.Workbook();
             const worksheet = workbook.addWorksheet('Glycol Results');
             
-            // ✅ SET PRINT AREA TO B1:J37
             worksheet.pageSetup.printArea = 'B1:J37';
+            worksheet.pageSetup.scale = 80;
+            worksheet.pageSetup.fitToPage = true;
+            worksheet.pageSetup.fitToWidth = 1;
+            worksheet.pageSetup.fitToHeight = 1;
             worksheet.pageSetup.margins = {
                 left: 0.25, right: 0.25,
                 top: 0.75, bottom: 0.75,
                 header: 0.3, footer: 0.3
             };
             
-            // Column widths
             worksheet.columns = [
-                { width: 3 },       // Column A (logo)
-                { width: 33.29 },   // Column B (labels)
-                { width: 12.86 },   // Column C
-                { width: 12.86 },   // Column D
-                { width: 12.86 },   // Column E
-                { width: 12.86 },   // Column F
-                { width: 12.86 },   // Column G
-                { width: 12.86 },   // Column H
-                { width: 12.86 },   // Column I
-                { width: 12.86 }    // Column J
+                { width: 3 },
+                { width: 33.29 },
+                { width: 12.86 },
+                { width: 12.86 },
+                { width: 12.86 },
+                { width: 12.86 },
+                { width: 12.86 },
+                { width: 12.86 },
+                { width: 12.86 },
+                { width: 12.86 }
             ];
             
-            // Set row heights
             for (let i = 1; i <= 37; i++) {
                 if (i !== 2) {
                     worksheet.getRow(i).height = 22;
                 }
             }
             
-            // Colors
             const COLORS = {
                 TITLE_BLUE: 'FF0000FF',
                 HEADER_CYAN: 'FFA9ECEF',
                 GRAY_CELL: 'FFF2F2F2',
                 GREEN_1: 'FFB3E3D5',
-                GREEN_2: 'FFD8F1EA',  // ✅ ROW 4 COLOR
+                GREEN_2: 'FFD8F1EA',
                 GREEN_3: 'FFD3EBDA',
                 GREEN_4: 'FFDFECEB',
                 BTX_BLUE: 'FFD1EFFA',
                 LABWARE_BLUE: 'FF0000FF',
                 BLACK: 'FF404040',
                 GRAY_BORDER: 'FFD9D9D9',
-                WHITE: 'FFFFFFFF'  // ✅ WHITE COLOR
+                WHITE: 'FFFFFFFF'
             };
             
-            // Helper function for styling
             function styleCell(cell, config) {
                 cell.font = {
                     name: 'Arial',
@@ -1112,7 +1150,6 @@
                 }
             }
             
-            // Fetch and add logo
             try {
                 const logoResponse = await fetch('bv-logo.png');
                 if (logoResponse.ok) {
@@ -1137,7 +1174,6 @@
                 console.warn('Logo loading skipped:', error.message);
             }
             
-            // Row 2: Title
             worksheet.mergeCells('B2:J2');
             worksheet.getCell('B2').value = 'Sample Summary Report';
             styleCell(worksheet.getCell('B2'), {
@@ -1148,7 +1184,6 @@
             });
             worksheet.getRow(2).height = 111;
             
-            // Row 3: Project Number header
             worksheet.mergeCells('B3:J3');
             worksheet.getCell('B3').value = 'Project Number';
             styleCell(worksheet.getCell('B3'), {
@@ -1159,10 +1194,9 @@
                 border: true
             });
             
-            // ✅ ROW 4: BOLD + C4:J4 = #D8F1EA
             worksheet.getCell('B4').value = projectNumber;
             styleCell(worksheet.getCell('B4'), {
-                bold: true,  // ✅ BOLD
+                bold: true,
                 fill: COLORS.GRAY_CELL,
                 align: 'center',
                 border: true
@@ -1173,15 +1207,14 @@
                 const cell = worksheet.getCell(4, col);
                 cell.value = r.sampleName;
                 styleCell(cell, {
-                    bold: true,  // ✅ BOLD
-                    fill: COLORS.GREEN_2,  // ✅ #D8F1EA
+                    bold: true,
+                    fill: COLORS.GREEN_2,
                     align: 'center',
                     border: true
                 });
                 col++;
             });
             
-            // Row 6: Glycol Results header
             worksheet.mergeCells('B6:J6');
             worksheet.getCell('B6').value = 'Glycol Results';
             styleCell(worksheet.getCell('B6'), {
@@ -1192,7 +1225,6 @@
                 border: true
             });
             
-            // ✅ ROWS 7-9: DEG ppm, TEG ppm, Water ppm (C9:J9 = WHITE)
             const group1Rows = [
                 { row: 7, label: 'DEG, ppm', data: resultsData.map(r => parseFloat(r.degPpm.toFixed(2))) },
                 { row: 8, label: 'TEG, ppm', data: resultsData.map(r => parseFloat(r.tegPpm.toFixed(2))) },
@@ -1213,14 +1245,13 @@
                     cell.value = val;
                     cell.numFmt = '0.00';
                     styleCell(cell, {
-                        fill: item.row === 9 ? COLORS.WHITE : COLORS.GRAY_CELL,  // ✅ ROW 9 = WHITE
+                        fill: item.row === 9 ? COLORS.WHITE : COLORS.GRAY_CELL,
                         align: 'center',
                         border: true
                     });
                 });
             });
             
-            // Rows 10-14: Percentages
             const group2Rows = [
                 { row: 10, label: 'DEG, %', data: resultsData.map(r => parseFloat(r.degPct.toFixed(4))) },
                 { row: 11, label: 'TEG, %', data: resultsData.map(r => parseFloat(r.tegPct.toFixed(4))) },
@@ -1253,7 +1284,6 @@
                 });
             });
             
-            // Rows 15-19: Round values
             const group3Rows = [
                 { row: 15, label: 'MEG%, by difference Round', data: resultsData.map(r => {
                     const val = dominantGlycol === 'MEG' ? r.megPct : (dominantGlycol === 'DEG' ? r.degPct : r.tegPct);
@@ -1288,7 +1318,6 @@
                 });
             });
             
-            // ✅ ROWS 20-21: C20:J21 = WHITE
             const group4Rows = [
                 { row: 20, label: 'Glycol from GC', data: resultsData.map(r => parseFloat(r.glycolGc.toFixed(2))) },
                 { row: 21, label: 'Condensate', data: resultsData.map(r => parseFloat(r.condensate.toFixed(2))) },
@@ -1312,14 +1341,13 @@
                     cell.value = val;
                     cell.numFmt = val < 1 ? '0.0000' : '0.00';
                     styleCell(cell, {
-                        fill: (item.row === 20 || item.row === 21) ? COLORS.WHITE : COLORS.GRAY_CELL,  // ✅ ROWS 20-21 = WHITE
+                        fill: (item.row === 20 || item.row === 21) ? COLORS.WHITE : COLORS.GRAY_CELL,
                         align: 'center',
                         border: true
                     });
                 });
             });
             
-            // Row 27: BTX Results header
             worksheet.mergeCells('B27:J27');
             worksheet.getCell('B27').value = 'BTX Results';
             styleCell(worksheet.getCell('B27'), {
@@ -1330,7 +1358,6 @@
                 border: true
             });
             
-            // ✅ BTX DATA ROWS WITH FORMULAS
             const btxRows = [
                 { row: 28, label: 'Benzene wt %', value: benzeneWt },
                 { row: 29, label: 'Benzene mol %', value: benzeneMol },
@@ -1351,14 +1378,18 @@
                 
                 worksheet.getCell(item.row, 3).value = item.value;
                 worksheet.getCell(item.row, 3).numFmt = '0.0';
+                
+                const isWhiteRow = (item.row === 28 || item.row === 30 || item.row === 32);
+                
                 styleCell(worksheet.getCell(item.row, 3), {
-                    fill: COLORS.GRAY_CELL,
+                    bold: true,
+                    fontColor: COLORS.TITLE_BLUE,
+                    fill: isWhiteRow ? COLORS.WHITE : COLORS.GRAY_CELL,
                     align: 'center',
                     border: true
                 });
             });
             
-            // Notes section
             worksheet.getCell('B35').value = 'Blue = results to enter into Labware';
             worksheet.getCell('B36').value = 'Notes,';
             worksheet.getCell('C36').value = 'Oil = (Glycol fraction × Condensate) ÷ 3';
@@ -1367,7 +1398,6 @@
                                 (dominantGlycol === 'DEG' ? 'MEG,TEG' : 'MEG,DEG');
             worksheet.getCell('C37').value = `${dominantGlycol} is calculated from the difference 100 minus the sum of the oil, water, ${otherGlycols}`;
             
-            // Generate and download
             const buffer = await workbook.xlsx.writeBuffer();
             const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
             const url = window.URL.createObjectURL(blob);
@@ -1377,7 +1407,7 @@
             a.click();
             window.URL.revokeObjectURL(url);
             
-            alert(`✅ Excel exported successfully!\n📄 ${projectNumber}_Glycol_Analysis.xlsx\n\n📋 Features:\n• Print Area: B1:J37\n• Row 4: Bold + #D8F1EA (C4:J4)\n• Row 9: White (C9:J9)\n• Rows 20-21: White (C20:J21)\n• BTX Results: Auto-calculated mol%`);
+            alert(`✅ Excel exported successfully!\n📄 ${projectNumber}_Glycol_Analysis.xlsx\n\n📋 Features:\n• Print Area: B1:J37\n• Scale: 80% (fits 1 page)\n• Row 4: Bold + #D8F1EA (C4:J4)\n• Row 9: White (C9:J9)\n• Rows 20-21: White (C20:J21)\n• BTX C28:J33: Bold + Blue (#0000FF)\n• BTX Rows 28,30,32: White background`);
         }
     </script>
 </body>
