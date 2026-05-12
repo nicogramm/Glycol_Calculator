@@ -561,16 +561,22 @@
             worksheet.getCell('B3').value = 'Project Number';
             styleCell(worksheet.getCell('B3'), { fontSize: 13, bold: true, fill: COLORS.HEADER_CYAN, align: 'center', border: true });
             
+            // Row 4 - Project Number value and sample names
             worksheet.getCell('B4').value = projectNumber;
             styleCell(worksheet.getCell('B4'), { bold: true, fill: COLORS.GRAY_CELL, align: 'center', border: true });
-            
-            let col = 3;
-            resultsData.forEach(r => {
+
+            // Fill all columns C to J
+            for (let col = 3; col <= 10; col++) {
                 const cell = worksheet.getCell(4, col);
-                cell.value = r.sampleName;
-                styleCell(cell, { bold: true, fill: COLORS.GREEN_2, align: 'center', border: true });
-                col++;
-            });
+                const dataIndex = col - 3;
+                if (dataIndex < resultsData.length) {
+                    cell.value = resultsData[dataIndex].sampleName;
+                    styleCell(cell, { bold: true, fill: COLORS.GREEN_2, align: 'center', border: true });
+                } else {
+                    // Empty columns still get formatting
+                    styleCell(cell, { bold: true, fill: COLORS.GREEN_2, align: 'center', border: true });
+                }
+            }
             
             worksheet.mergeCells('B6:J6');
             worksheet.getCell('B6').value = 'Glycol Results';
@@ -622,7 +628,7 @@
                 cell.numFmt = '#,##0.00';
                 styleCell(cell, {
                     fontColor: COLORS.BLUE,
-                    fill: COLORS.WHITE,
+                    fill: COLORS.GRAY_CELL,
                     align: 'center',
                     border: true
                 });
@@ -833,11 +839,28 @@
                 });
             });
             
-            worksheet.getCell('B35').value = 'Notes,';
+                    worksheet.getCell('B35').value = 'Notes,';
             worksheet.getCell('C35').value = 'Oil is divided by 3 because its response on the GC is overstated by 3 times.';
             worksheet.getCell('C36').value = 'All glycols are normalized to sum to Total Glycol %.';
             
-            const buffer = await workbook.xlsx.writeBuffer();
+            // ✅ ILAGAY MO ITO - Apply borders to ALL cells B1:J43
+            for (let row = 1; row <= 43; row++) {
+                for (let col = 2; col <= 10; col++) {
+                    const cell = worksheet.getCell(row, col);
+                    
+                    // Only apply border if cell doesn't have one yet
+                    if (!cell.border || !cell.border.top) {
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: COLORS.GRAY_BORDER } },
+                            left: { style: 'thin', color: { argb: COLORS.GRAY_BORDER } },
+                            bottom: { style: 'thin', color: { argb: COLORS.GRAY_BORDER } },
+                            right: { style: 'thin', color: { argb: COLORS.GRAY_BORDER } }
+                        };
+                    }
+                }
+            }
+            
+            const buffer = await workbook.xlsx.writeBuffer();  // ⬅️ NANDITO PA RIN ITO
             const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
