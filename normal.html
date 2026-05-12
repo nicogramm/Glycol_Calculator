@@ -33,8 +33,10 @@
         .sample-input input:focus { outline: none; border-color: #4caf50; }
         .calculated-badge { display: inline-block; background: #ffd700; color: #1e3c72; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: bold; margin-left: 5px; }
         .btx-section { background: #e3f2fd; border-radius: 10px; padding: 20px; margin-top: 20px; border: 2px solid #2196f3; }
-        .btx-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 15px; }
-        .btx-input-group { background: white; padding: 15px; border-radius: 8px; border: 2px solid #e0e0e0; }
+        .btx-samples-container { display: flex; gap: 20px; overflow-x: auto; padding: 20px 0; }
+        .btx-sample-column { flex: 0 0 300px; background: white; border-radius: 10px; padding: 20px; border: 2px solid #2196f3; }
+        .btx-sample-header { background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%); color: white; padding: 12px; border-radius: 8px; margin-bottom: 15px; text-align: center; font-weight: bold; }
+        .btx-input-group { margin-bottom: 15px; }
         .btx-input-group label { display: block; font-size: 13px; font-weight: bold; color: #1976d2; margin-bottom: 8px; }
         .btx-input-group input { width: 100%; padding: 10px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; margin-bottom: 10px; }
         .btx-result { background: #f5f5f5; padding: 10px; border-radius: 6px; text-align: center; font-weight: bold; color: #1976d2; }
@@ -99,26 +101,10 @@
                 <div class="samples-container" id="samplesContainer"></div>
             </div>
             <div class="section">
-                <div class="section-title">🧬 BTX Results</div>
+                <div class="section-title">🧬 BTX Results (Per Sample)</div>
                 <div class="btx-section">
-                    <p style="margin-bottom: 15px; color: #1976d2; font-weight: bold;">Enter %wt values — mol% will be calculated automatically</p>
-                    <div class="btx-grid">
-                        <div class="btx-input-group">
-                            <label>🔵 Benzene</label>
-                            <input type="number" id="benzeneWt" step="0.01" placeholder="Enter %wt" oninput="calculateBTX()">
-                            <div class="btx-result">mol%: <span id="benzeneMol">0.0</span></div>
-                        </div>
-                        <div class="btx-input-group">
-                            <label>🟢 Toluene</label>
-                            <input type="number" id="tolueneWt" step="0.01" placeholder="Enter %wt" oninput="calculateBTX()">
-                            <div class="btx-result">mol%: <span id="tolueneMol">0.0</span></div>
-                        </div>
-                        <div class="btx-input-group">
-                            <label>🟡 Xylene</label>
-                            <input type="number" id="xyleneWt" step="0.01" placeholder="Enter %wt" oninput="calculateBTX()">
-                            <div class="btx-result">mol%: <span id="xyleneMol">0.0</span></div>
-                        </div>
-                    </div>
+                    <p style="margin-bottom: 15px; color: #1976d2; font-weight: bold;">Enter %wt values for each sample — mol% will be calculated automatically</p>
+                    <div class="btx-samples-container" id="btxSamplesContainer"></div>
                     <div class="info-box" style="margin-top: 15px;">
                         <strong>📐 Formulas:</strong><br>
                         • Benzene mol% = round(wt% / 78.114, 1)<br>
@@ -146,26 +132,28 @@
         
         window.onload = function() {
             generateSamples();
+            generateBTXSamples();
         };
         
-        function calculateBTX() {
-            const benzeneWt = parseFloat(document.getElementById('benzeneWt').value) || 0;
-            const tolueneWt = parseFloat(document.getElementById('tolueneWt').value) || 0;
-            const xyleneWt = parseFloat(document.getElementById('xyleneWt').value) || 0;
+        function calculateBTX(sampleIndex) {
+            const benzeneWt = parseFloat(document.getElementById(`benzeneWt${sampleIndex}`).value) || 0;
+            const tolueneWt = parseFloat(document.getElementById(`tolueneWt${sampleIndex}`).value) || 0;
+            const xyleneWt = parseFloat(document.getElementById(`xyleneWt${sampleIndex}`).value) || 0;
             
             const benzeneMol = Math.round((benzeneWt / 78.114) * 10) / 10;
             const tolueneMol = Math.round((tolueneWt / 92.141) * 10) / 10;
             const xyleneMol = Math.round((xyleneWt / 106.17) * 10) / 10;
             
-            document.getElementById('benzeneMol').textContent = benzeneMol.toFixed(1);
-            document.getElementById('tolueneMol').textContent = tolueneMol.toFixed(1);
-            document.getElementById('xyleneMol').textContent = xyleneMol.toFixed(1);
+            document.getElementById(`benzeneMol${sampleIndex}`).textContent = benzeneMol.toFixed(1);
+            document.getElementById(`tolueneMol${sampleIndex}`).textContent = tolueneMol.toFixed(1);
+            document.getElementById(`xyleneMol${sampleIndex}`).textContent = xyleneMol.toFixed(1);
         }
         
         function addSample() {
             sampleCount++;
             document.getElementById('sampleCount').textContent = sampleCount;
             generateSamples();
+            generateBTXSamples();
         }
         
         function removeSample() {
@@ -173,6 +161,7 @@
                 sampleCount--;
                 document.getElementById('sampleCount').textContent = sampleCount;
                 generateSamples();
+                generateBTXSamples();
             }
         }
         
@@ -230,6 +219,42 @@
             }
         }
         
+        function generateBTXSamples() {
+            const container = document.getElementById('btxSamplesContainer');
+            container.innerHTML = '';
+            
+            for (let i = 1; i <= sampleCount; i++) {
+                const sampleNum = String(i).padStart(3, '0');
+                const btxDiv = document.createElement('div');
+                btxDiv.className = 'btx-sample-column';
+                
+                btxDiv.innerHTML = `
+                    <div class="btx-sample-header">
+                        BTX - Sample ${i} (${sampleNum})
+                    </div>
+                    
+                    <div class="btx-input-group">
+                        <label>🔵 Benzene</label>
+                        <input type="number" id="benzeneWt${i}" step="0.01" placeholder="Enter %wt" oninput="calculateBTX(${i})">
+                        <div class="btx-result">mol%: <span id="benzeneMol${i}">0.0</span></div>
+                    </div>
+                    
+                    <div class="btx-input-group">
+                        <label>🟢 Toluene</label>
+                        <input type="number" id="tolueneWt${i}" step="0.01" placeholder="Enter %wt" oninput="calculateBTX(${i})">
+                        <div class="btx-result">mol%: <span id="tolueneMol${i}">0.0</span></div>
+                    </div>
+                    
+                    <div class="btx-input-group">
+                        <label>🟡 Xylene</label>
+                        <input type="number" id="xyleneWt${i}" step="0.01" placeholder="Enter %wt" oninput="calculateBTX(${i})">
+                        <div class="btx-result">mol%: <span id="xyleneMol${i}">0.0</span></div>
+                    </div>
+                `;
+                container.appendChild(btxDiv);
+            }
+        }
+        
         function formatNumber(num, decimals) {
             return num.toLocaleString('en-US', {
                 minimumFractionDigits: decimals,
@@ -271,6 +296,15 @@
                 
                 const totalCheck = waterPct + oilPct + finalMEG + finalDEG + finalTEG;
                 
+                // BTX values per sample
+                const benzeneWt = parseFloat(document.getElementById(`benzeneWt${i}`).value) || 0;
+                const tolueneWt = parseFloat(document.getElementById(`tolueneWt${i}`).value) || 0;
+                const xyleneWt = parseFloat(document.getElementById(`xyleneWt${i}`).value) || 0;
+                
+                const benzeneMol = Math.round((benzeneWt / 78.114) * 10) / 10;
+                const tolueneMol = Math.round((tolueneWt / 92.141) * 10) / 10;
+                const xyleneMol = Math.round((xyleneWt / 106.17) * 10) / 10;
+                
                 resultsData.push({
                     sampleName: sampleName,
                     waterPpm: waterPpm,
@@ -291,7 +325,13 @@
                     finalDEG: finalDEG,
                     finalTEG: finalTEG,
                     oilDiv3: oilDiv3,
-                    totalCheck: totalCheck
+                    totalCheck: totalCheck,
+                    benzeneWt: benzeneWt,
+                    benzeneMol: benzeneMol,
+                    tolueneWt: tolueneWt,
+                    tolueneMol: tolueneMol,
+                    xyleneWt: xyleneWt,
+                    xyleneMol: xyleneMol
                 });
             }
             
@@ -302,14 +342,6 @@
         
         function displayResults() {
             const container = document.getElementById('resultsTableContainer');
-            
-            const benzeneWt = parseFloat(document.getElementById('benzeneWt').value) || 0;
-            const tolueneWt = parseFloat(document.getElementById('tolueneWt').value) || 0;
-            const xyleneWt = parseFloat(document.getElementById('xyleneWt').value) || 0;
-            
-            const benzeneMol = Math.round((benzeneWt / 78.114) * 10) / 10;
-            const tolueneMol = Math.round((tolueneWt / 92.141) * 10) / 10;
-            const xyleneMol = Math.round((xyleneWt / 106.17) * 10) / 10;
             
             let tableHTML = `
                 <table class="results-table">
@@ -405,27 +437,27 @@
                         </tr>
                         <tr>
                             <td>Benzene wt %</td>
-                            <td colspan="${resultsData.length}">${formatNumber(benzeneWt, 2)}</td>
+                            ${resultsData.map(r => `<td>${formatNumber(r.benzeneWt, 2)}</td>`).join('')}
                         </tr>
                         <tr>
                             <td>Benzene mol %</td>
-                            <td colspan="${resultsData.length}">${benzeneMol.toFixed(1)}</td>
+                            ${resultsData.map(r => `<td>${r.benzeneMol.toFixed(1)}</td>`).join('')}
                         </tr>
                         <tr>
                             <td>Toluene wt %</td>
-                            <td colspan="${resultsData.length}">${formatNumber(tolueneWt, 2)}</td>
+                            ${resultsData.map(r => `<td>${formatNumber(r.tolueneWt, 2)}</td>`).join('')}
                         </tr>
                         <tr>
                             <td>Toluene mol %</td>
-                            <td colspan="${resultsData.length}">${tolueneMol.toFixed(1)}</td>
+                            ${resultsData.map(r => `<td>${r.tolueneMol.toFixed(1)}</td>`).join('')}
                         </tr>
                         <tr>
                             <td>Xylene wt %</td>
-                            <td colspan="${resultsData.length}">${formatNumber(xyleneWt, 2)}</td>
+                            ${resultsData.map(r => `<td>${formatNumber(r.xyleneWt, 2)}</td>`).join('')}
                         </tr>
                         <tr>
                             <td>Xylene mol %</td>
-                            <td colspan="${resultsData.length}">${xyleneMol.toFixed(1)}</td>
+                            ${resultsData.map(r => `<td>${r.xyleneMol.toFixed(1)}</td>`).join('')}
                         </tr>
                     </tbody>
                 </table>
@@ -434,7 +466,8 @@
                     <strong>📋 Notes:</strong><br>
                     • Oil = (Total Organic % × Condensate / 100) ÷ 3<br>
                     • All glycols normalized to Total Glycol %<br>
-                    • Total Check should equal 100.00%
+                    • Total Check should equal 100.00%<br>
+                    • BTX values are calculated per sample
                 </div>
             `;
             
@@ -443,14 +476,6 @@
 
         async function exportToExcel() {
             const projectNumber = document.getElementById('projectNumber').value || 'N/A';
-            
-            const benzeneWt = parseFloat(document.getElementById('benzeneWt').value) || 0;
-            const tolueneWt = parseFloat(document.getElementById('tolueneWt').value) || 0;
-            const xyleneWt = parseFloat(document.getElementById('xyleneWt').value) || 0;
-            
-            const benzeneMol = Math.round((benzeneWt / 78.114) * 10) / 10;
-            const tolueneMol = Math.round((tolueneWt / 92.141) * 10) / 10;
-            const xyleneMol = Math.round((xyleneWt / 106.17) * 10) / 10;
             
             const ExcelJS = window.ExcelJS;
             const workbook = new ExcelJS.Workbook();
@@ -536,7 +561,6 @@
             worksheet.getCell('B3').value = 'Project Number';
             styleCell(worksheet.getCell('B3'), { fontSize: 13, bold: true, fill: COLORS.HEADER_CYAN, align: 'center', border: true });
             
-            // Row 4 - Project Number value and sample names
             worksheet.getCell('B4').value = projectNumber;
             styleCell(worksheet.getCell('B4'), { bold: true, fill: COLORS.GRAY_CELL, align: 'center', border: true });
             
@@ -552,7 +576,6 @@
             worksheet.getCell('B6').value = 'Glycol Results';
             styleCell(worksheet.getCell('B6'), { fontSize: 11, bold: true, fill: COLORS.HEADER_CYAN, align: 'center', border: true });
             
-            // ✅ ROW 7 - Water Content, ppm (C7:J7 WHITE background)
             worksheet.getCell('B7').value = 'Water Content, ppm';
             styleCell(worksheet.getCell('B7'), { bold: true, fill: COLORS.GREEN_1, align: 'center', border: true });
             
@@ -563,7 +586,6 @@
                 styleCell(cell, { fill: COLORS.WHITE, align: 'center', border: true });
             });
             
-            // ✅ ROW 8 - Water Content, % (C8:J8 Blue font, bold, underline, #F2F2F2 background)
             worksheet.getCell('B8').value = 'Water Content, %';
             styleCell(worksheet.getCell('B8'), { bold: true, fill: COLORS.GREEN_1, align: 'center', border: true });
             
@@ -581,7 +603,6 @@
                 });
             });
             
-            // ✅ ROW 9 - Total Organic, ppm
             worksheet.getCell('B9').value = 'Total Organic, ppm';
             styleCell(worksheet.getCell('B9'), { bold: true, fill: COLORS.GREEN_1, align: 'center', border: true });
             
@@ -592,7 +613,6 @@
                 styleCell(cell, { fill: COLORS.GRAY_CELL, align: 'center', border: true });
             });
             
-            // ✅ ROW 10 - Total Organic, % (C10:J10 Blue font color)
             worksheet.getCell('B10').value = 'Total Organic, %';
             styleCell(worksheet.getCell('B10'), { bold: true, fill: COLORS.GREEN_1, align: 'center', border: true });
             
@@ -608,7 +628,6 @@
                 });
             });
             
-            // ✅ ROW 11 - Glycol from GC (B11 #DFECEB, C11:J11 WHITE)
             worksheet.getCell('B11').value = 'Glycol from GC';
             styleCell(worksheet.getCell('B11'), { bold: true, fill: COLORS.GREEN_4, align: 'center', border: true });
             
@@ -619,7 +638,6 @@
                 styleCell(cell, { fill: COLORS.WHITE, align: 'center', border: true });
             });
             
-            // ✅ ROW 12 - Condensate (B12 #DFECEB, C12:J12 WHITE)
             worksheet.getCell('B12').value = 'Condensate';
             styleCell(worksheet.getCell('B12'), { bold: true, fill: COLORS.GREEN_4, align: 'center', border: true });
             
@@ -630,7 +648,6 @@
                 styleCell(cell, { fill: COLORS.WHITE, align: 'center', border: true });
             });
             
-            // ✅ ROW 13 - Oil, % (C13:J13 Bold, blue, underline)
             worksheet.getCell('B13').value = 'Oil, %';
             styleCell(worksheet.getCell('B13'), { bold: true, fill: COLORS.GREEN_2, align: 'center', border: true });
             
@@ -648,7 +665,6 @@
                 });
             });
             
-            // ROW 14 - Total Glycol, %
             worksheet.getCell('B14').value = 'Total Glycol, %';
             styleCell(worksheet.getCell('B14'), { bold: true, fill: COLORS.GREEN_2, align: 'center', border: true });
             
@@ -659,7 +675,6 @@
                 styleCell(cell, { fill: COLORS.GRAY_CELL, align: 'center', border: true });
             });
             
-            // ✅ ROW 15 - MEG, ppm (C15:J15 WHITE)
             worksheet.getCell('B15').value = 'MEG, ppm';
             styleCell(worksheet.getCell('B15'), { bold: true, fill: COLORS.GREEN_3, align: 'center', border: true });
             
@@ -670,7 +685,6 @@
                 styleCell(cell, { fill: COLORS.WHITE, align: 'center', border: true });
             });
             
-            // ✅ ROW 16 - DEG, ppm (C16:J16 WHITE)
             worksheet.getCell('B16').value = 'DEG, ppm';
             styleCell(worksheet.getCell('B16'), { bold: true, fill: COLORS.GREEN_3, align: 'center', border: true });
             
@@ -681,7 +695,6 @@
                 styleCell(cell, { fill: COLORS.WHITE, align: 'center', border: true });
             });
             
-            // ✅ ROW 17 - TEG, ppm (C17:J17 WHITE)
             worksheet.getCell('B17').value = 'TEG, ppm';
             styleCell(worksheet.getCell('B17'), { bold: true, fill: COLORS.GREEN_3, align: 'center', border: true });
             
@@ -692,7 +705,6 @@
                 styleCell(cell, { fill: COLORS.WHITE, align: 'center', border: true });
             });
             
-            // ✅ ROW 18 - Normalized MEG (B18 #A9ECEF)
             worksheet.getCell('B18').value = 'Normalized MEG';
             styleCell(worksheet.getCell('B18'), { bold: true, fill: COLORS.HEADER_CYAN, align: 'center', border: true });
             
@@ -703,7 +715,6 @@
                 styleCell(cell, { fill: COLORS.GRAY_CELL, align: 'center', border: true });
             });
             
-            // ✅ ROW 19 - Normalized DEG (B19 #A9ECEF)
             worksheet.getCell('B19').value = 'Normalized DEG';
             styleCell(worksheet.getCell('B19'), { bold: true, fill: COLORS.HEADER_CYAN, align: 'center', border: true });
             
@@ -714,7 +725,6 @@
                 styleCell(cell, { fill: COLORS.GRAY_CELL, align: 'center', border: true });
             });
             
-            // ✅ ROW 20 - Normalized TEG (B20 #A9ECEF)
             worksheet.getCell('B20').value = 'Normalized TEG';
             styleCell(worksheet.getCell('B20'), { bold: true, fill: COLORS.HEADER_CYAN, align: 'center', border: true });
             
@@ -725,7 +735,6 @@
                 styleCell(cell, { fill: COLORS.GRAY_CELL, align: 'center', border: true });
             });
             
-            // ✅ ROWS 21-24 - Final values (C21:J24 Bold, blue, underline, WHITE background)
             const rows21_24 = [
                 { row: 21, label: 'Final MEG, %', data: resultsData.map(r => r.finalMEG), fill: COLORS.GREEN_4 },
                 { row: 22, label: 'Final DEG, %', data: resultsData.map(r => r.finalDEG), fill: COLORS.GREEN_4 },
@@ -757,12 +766,11 @@
                 });
             });
             
-            // ✅ ROW 25 - Total (B25 wrapped text, C25:J25 #27CED7)
             worksheet.getCell('B25').value = 'Total Water Content + HC + MEG + DEG + TEG';
             worksheet.getCell('B25').alignment = { wrapText: true, vertical: 'middle', horizontal: 'center' };
             styleCell(worksheet.getCell('B25'), {
                 bold: true,
-                fill: COLORS.GREEN_4,
+                fill: COLORS.CYAN_TOTAL,
                 align: 'center',
                 border: true,
                 wrap: true
@@ -791,13 +799,14 @@
                 border: true
             });
             
+            // BTX ROWS - Per sample values
             const btxRows = [
-                { row: 28, label: 'Benzene wt %', value: benzeneWt, fmt: '#,##0.00' },
-                { row: 29, label: 'Benzene mol %', value: benzeneMol, fmt: '0.0' },
-                { row: 30, label: 'Toluene wt %', value: tolueneWt, fmt: '#,##0.00' },
-                { row: 31, label: 'Toluene mol %', value: tolueneMol, fmt: '0.0' },
-                { row: 32, label: 'Xylene wt %', value: xyleneWt, fmt: '#,##0.00' },
-                { row: 33, label: 'Xylene mol %', value: xyleneMol, fmt: '0.0' }
+                { row: 28, label: 'Benzene wt %', data: resultsData.map(r => r.benzeneWt), fmt: '#,##0.00', isWhite: true },
+                { row: 29, label: 'Benzene mol %', data: resultsData.map(r => r.benzeneMol), fmt: '0.0', isWhite: false },
+                { row: 30, label: 'Toluene wt %', data: resultsData.map(r => r.tolueneWt), fmt: '#,##0.00', isWhite: true },
+                { row: 31, label: 'Toluene mol %', data: resultsData.map(r => r.tolueneMol), fmt: '0.0', isWhite: false },
+                { row: 32, label: 'Xylene wt %', data: resultsData.map(r => r.xyleneWt), fmt: '#,##0.00', isWhite: true },
+                { row: 33, label: 'Xylene mol %', data: resultsData.map(r => r.xyleneMol), fmt: '0.0', isWhite: false }
             ];
             
             btxRows.forEach(item => {
@@ -809,17 +818,18 @@
                     border: true
                 });
                 
-                const cell = worksheet.getCell(item.row, 3);
-                cell.value = item.value;
-                cell.numFmt = item.fmt;
-                
-                const isWhiteRow = (item.row === 28 || item.row === 30 || item.row === 32);
-                styleCell(cell, {
-                    bold: true,
-                    fontColor: COLORS.TITLE_BLUE,
-                    fill: isWhiteRow ? COLORS.WHITE : COLORS.GRAY_CELL,
-                    align: 'center',
-                    border: true
+                item.data.forEach((val, idx) => {
+                    const cell = worksheet.getCell(item.row, 3 + idx);
+                    cell.value = val;
+                    cell.numFmt = item.fmt;
+                    
+                    styleCell(cell, {
+                        bold: true,
+                        fontColor: COLORS.TITLE_BLUE,
+                        fill: item.isWhite ? COLORS.WHITE : COLORS.GRAY_CELL,
+                        align: 'center',
+                        border: true
+                    });
                 });
             });
             
