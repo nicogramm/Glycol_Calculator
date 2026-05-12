@@ -133,3 +133,490 @@
             </div>
         </div>
     </div>
+
+        <script>
+        let sampleCount = 2;
+        let resultsData = [];
+        
+        window.onload = function() {
+            generateSamples();
+        };
+        
+        function calculateBTX() {
+            const benzeneWt = parseFloat(document.getElementById('benzeneWt').value) || 0;
+            const tolueneWt = parseFloat(document.getElementById('tolueneWt').value) || 0;
+            const xyleneWt = parseFloat(document.getElementById('xyleneWt').value) || 0;
+            
+            const benzeneMol = Math.round((benzeneWt / 78.114) * 10) / 10;
+            const tolueneMol = Math.round((tolueneWt / 92.141) * 10) / 10;
+            const xyleneMol = Math.round((xyleneWt / 106.17) * 10) / 10;
+            
+            document.getElementById('benzeneMol').textContent = benzeneMol.toFixed(1);
+            document.getElementById('tolueneMol').textContent = tolueneMol.toFixed(1);
+            document.getElementById('xyleneMol').textContent = xyleneMol.toFixed(1);
+        }
+        
+        function addSample() {
+            sampleCount++;
+            document.getElementById('sampleCount').textContent = sampleCount;
+            generateSamples();
+        }
+        
+        function removeSample() {
+            if (sampleCount > 1) {
+                sampleCount--;
+                document.getElementById('sampleCount').textContent = sampleCount;
+                generateSamples();
+            }
+        }
+        
+        function generateSamples() {
+            const container = document.getElementById('samplesContainer');
+            container.innerHTML = '';
+            
+            for (let i = 1; i <= sampleCount; i++) {
+                const sampleNum = String(i).padStart(3, '0');
+                const sampleDiv = document.createElement('div');
+                sampleDiv.className = 'sample-column';
+                
+                sampleDiv.innerHTML = `
+                    <div class="sample-header">
+                        Sample ${i}
+                        <input type="text" class="sample-name-input" id="sampleName${i}" value="${sampleNum}" placeholder="Sample ID">
+                    </div>
+                    
+                    <div class="sample-input">
+                        <label>Water Content (ppm)</label>
+                        <input type="number" id="waterPpm${i}" step="0.01" placeholder="0.00">
+                    </div>
+                    
+                    <div class="sample-input">
+                        <label>Total Organic (ppm)</label>
+                        <input type="number" id="totalOrganicPpm${i}" step="0.01" placeholder="0.00">
+                    </div>
+                    
+                    <div class="sample-input">
+                        <label>Glycol from GC (%)</label>
+                        <input type="number" id="glycolGc${i}" value="100.00" step="0.01">
+                    </div>
+                    
+                    <div class="sample-input">
+                        <label>Condensate (%)</label>
+                        <input type="number" id="condensate${i}" step="0.01" placeholder="0.00">
+                    </div>
+                    
+                    <div class="sample-input">
+                        <label>MEG (ppm)</label>
+                        <input type="number" id="meg${i}" step="0.01" placeholder="0.00">
+                    </div>
+                    
+                    <div class="sample-input">
+                        <label>DEG (ppm)</label>
+                        <input type="number" id="deg${i}" step="0.01" placeholder="0.00">
+                    </div>
+                    
+                    <div class="sample-input">
+                        <label>TEG (ppm)</label>
+                        <input type="number" id="teg${i}" step="0.01" placeholder="0.00">
+                    </div>
+                `;
+                container.appendChild(sampleDiv);
+            }
+        }
+        
+        function calculateAll() {
+            resultsData = [];
+            const projectNumber = document.getElementById('projectNumber').value || 'N/A';
+            
+            for (let i = 1; i <= sampleCount; i++) {
+                const sampleName = document.getElementById(`sampleName${i}`).value;
+                
+                const waterPpm = parseFloat(document.getElementById(`waterPpm${i}`).value) || 0;
+                const totalOrganicPpm = parseFloat(document.getElementById(`totalOrganicPpm${i}`).value) || 0;
+                const glycolGc = parseFloat(document.getElementById(`glycolGc${i}`).value) || 100;
+                const condensate = parseFloat(document.getElementById(`condensate${i}`).value) || 0;
+                const megPpm = parseFloat(document.getElementById(`meg${i}`).value) || 0;
+                const degPpm = parseFloat(document.getElementById(`deg${i}`).value) || 0;
+                const tegPpm = parseFloat(document.getElementById(`teg${i}`).value) || 0;
+                
+                const waterPct = waterPpm / 10000;
+                const totalOrganicPct = totalOrganicPpm / 10000;
+                const oilPct = (totalOrganicPct * (condensate / 100)) / 3;
+                const totalGlycolPct = totalOrganicPct - oilPct;
+                
+                const sumGlycolsPpm = megPpm + degPpm + tegPpm;
+                
+                const normalizedMEG = sumGlycolsPpm > 0 ? (megPpm / sumGlycolsPpm) * 100 : 0;
+                const normalizedDEG = sumGlycolsPpm > 0 ? (degPpm / sumGlycolsPpm) * 100 : 0;
+                const normalizedTEG = sumGlycolsPpm > 0 ? (tegPpm / sumGlycolsPpm) * 100 : 0;
+                
+                const finalMEG = (normalizedMEG / 100) * totalGlycolPct;
+                const finalDEG = (normalizedDEG / 100) * totalGlycolPct;
+                const finalTEG = (normalizedTEG / 100) * totalGlycolPct;
+                
+                const oilDiv3 = oilPct;
+                
+                const totalCheck = waterPct + oilPct + finalMEG + finalDEG + finalTEG;
+                
+                resultsData.push({
+                    sampleName: sampleName,
+                    waterPpm: waterPpm,
+                    waterPct: waterPct,
+                    totalOrganicPpm: totalOrganicPpm,
+                    totalOrganicPct: totalOrganicPct,
+                    glycolGc: glycolGc,
+                    condensate: condensate,
+                    oilPct: oilPct,
+                    totalGlycolPct: totalGlycolPct,
+                    megPpm: megPpm,
+                    degPpm: degPpm,
+                    tegPpm: tegPpm,
+                    normalizedMEG: normalizedMEG,
+                    normalizedDEG: normalizedDEG,
+                    normalizedTEG: normalizedTEG,
+                    finalMEG: finalMEG,
+                    finalDEG: finalDEG,
+                    finalTEG: finalTEG,
+                    oilDiv3: oilDiv3,
+                    totalCheck: totalCheck
+                });
+            }
+            
+            displayResults();
+            document.getElementById('resultsSection').classList.remove('hidden');
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function displayResults() {
+            const container = document.getElementById('resultsTableContainer');
+            
+            const benzeneWt = parseFloat(document.getElementById('benzeneWt').value) || 0;
+            const tolueneWt = parseFloat(document.getElementById('tolueneWt').value) || 0;
+            const xyleneWt = parseFloat(document.getElementById('xyleneWt').value) || 0;
+            
+            const benzeneMol = Math.round((benzeneWt / 78.114) * 10) / 10;
+            const tolueneMol = Math.round((tolueneWt / 92.141) * 10) / 10;
+            const xyleneMol = Math.round((xyleneWt / 106.17) * 10) / 10;
+            
+            let tableHTML = `
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>Parameter</th>
+                            ${resultsData.map(r => `<th>${r.sampleName}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Glycol Results</strong></td>
+                            ${resultsData.map(() => `<td></td>`).join('')}
+                        </tr>
+                        <tr>
+                            <td>Water Content, ppm</td>
+                            ${resultsData.map(r => `<td>${r.waterPpm.toFixed(2)}</td>`).join('')}
+                        </tr>
+                        <tr>
+                            <td>Water Content, %</td>
+                            ${resultsData.map(r => `<td>${r.waterPct.toFixed(4)}</td>`).join('')}
+                        </tr>
+                        <tr>
+                            <td>Total Organic, ppm</td>
+                            ${resultsData.map(r => `<td>${r.totalOrganicPpm.toFixed(2)}</td>`).join('')}
+                        </tr>
+                        <tr>
+                            <td>Total Organic, %</td>
+                            ${resultsData.map(r => `<td>${r.totalOrganicPct.toFixed(4)}</td>`).join('')}
+                        </tr>
+                        <tr>
+                            <td>Glycol from GC</td>
+                            ${resultsData.map(r => `<td>${r.glycolGc.toFixed(4)}</td>`).join('')}
+                        </tr>
+                        <tr>
+                            <td>Condensate</td>
+                            ${resultsData.map(r => `<td>${r.condensate.toFixed(4)}</td>`).join('')}
+                        </tr>
+                        <tr>
+                            <td>Oil, %</td>
+                            ${resultsData.map(r => `<td>${r.oilPct.toFixed(7)}</td>`).join('')}
+                        </tr>
+                        <tr>
+                            <td>Total Glycol, %</td>
+                            ${resultsData.map(r => `<td>${r.totalGlycolPct.toFixed(7)}</td>`).join('')}
+                        </tr>
+                        <tr>
+                            <td>MEG, ppm</td>
+                            ${resultsData.map(r => `<td>${r.megPpm.toFixed(2)}</td>`).join('')}
+                        </tr>
+                        <tr>
+                            <td>DEG, ppm</td>
+                            ${resultsData.map(r => `<td>${r.degPpm.toFixed(2)}</td>`).join('')}
+                        </tr>
+                        <tr>
+                            <td>TEG, ppm</td>
+                            ${resultsData.map(r => `<td>${r.tegPpm.toFixed(2)}</td>`).join('')}
+                        </tr>
+                        <tr class="highlight">
+                            <td><strong>Normalized MEG</strong></td>
+                            ${resultsData.map(r => `<td><strong>${r.normalizedMEG.toFixed(10)}</strong></td>`).join('')}
+                        </tr>
+                        <tr class="highlight">
+                            <td><strong>Normalized DEG</strong></td>
+                            ${resultsData.map(r => `<td><strong>${r.normalizedDEG.toFixed(10)}</strong></td>`).join('')}
+                        </tr>
+                        <tr class="highlight">
+                            <td><strong>Normalized TEG</strong></td>
+                            ${resultsData.map(r => `<td><strong>${r.normalizedTEG.toFixed(10)}</strong></td>`).join('')}
+                        </tr>
+                        <tr>
+                            <td>Final MEG, %</td>
+                            ${resultsData.map(r => `<td>${r.finalMEG.toFixed(10)}</td>`).join('')}
+                        </tr>
+                        <tr>
+                            <td>Final DEG, %</td>
+                            ${resultsData.map(r => `<td>${r.finalDEG.toFixed(10)}</td>`).join('')}
+                        </tr>
+                        <tr>
+                            <td>Final TEG, %</td>
+                            ${resultsData.map(r => `<td>${r.finalTEG.toFixed(10)}</td>`).join('')}
+                        </tr>
+                        <tr>
+                            <td>% oil/3 in sample</td>
+                            ${resultsData.map(r => `<td>${r.oilDiv3.toFixed(10)}</td>`).join('')}
+                        </tr>
+                        <tr class="total-check">
+                            <td><strong>Total Check (Water + Oil + MEG + DEG + TEG)</strong></td>
+                            ${resultsData.map(r => `<td><strong>${r.totalCheck.toFixed(2)}</strong></td>`).join('')}
+                        </tr>
+                        <tr class="btx-section-row">
+                            <td colspan="${resultsData.length + 1}"><strong>BTX Results</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Benzene wt %</td>
+                            <td colspan="${resultsData.length}">${benzeneWt.toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td>Benzene mol %</td>
+                            <td colspan="${resultsData.length}">${benzeneMol.toFixed(1)}</td>
+                        </tr>
+                        <tr>
+                            <td>Toluene wt %</td>
+                            <td colspan="${resultsData.length}">${tolueneWt.toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td>Toluene mol %</td>
+                            <td colspan="${resultsData.length}">${tolueneMol.toFixed(1)}</td>
+                        </tr>
+                        <tr>
+                            <td>Xylene wt %</td>
+                            <td colspan="${resultsData.length}">${xyleneWt.toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td>Xylene mol %</td>
+                            <td colspan="${resultsData.length}">${xyleneMol.toFixed(1)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="info-box" style="margin-top: 20px;">
+                    <strong>📋 Notes:</strong><br>
+                                        • Oil = (Total Organic % × Condensate / 100) ÷ 3<br>
+                    • All glycols normalized to Total Glycol %<br>
+                    • Total Check should equal 100.00%
+                </div>
+            `;
+            
+            container.innerHTML = tableHTML;
+        }
+
+        async function exportToExcel() {
+            const projectNumber = document.getElementById('projectNumber').value || 'N/A';
+            
+            const benzeneWt = parseFloat(document.getElementById('benzeneWt').value) || 0;
+            const tolueneWt = parseFloat(document.getElementById('tolueneWt').value) || 0;
+            const xyleneWt = parseFloat(document.getElementById('xyleneWt').value) || 0;
+            
+            const benzeneMol = Math.round((benzeneWt / 78.114) * 10) / 10;
+            const tolueneMol = Math.round((tolueneWt / 92.141) * 10) / 10;
+            const xyleneMol = Math.round((xyleneWt / 106.17) * 10) / 10;
+            
+            const ExcelJS = window.ExcelJS;
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('Glycol Results');
+            
+            worksheet.pageSetup.printArea = 'B1:J43';
+            worksheet.pageSetup.scale = 80;
+            worksheet.pageSetup.fitToPage = true;
+            worksheet.pageSetup.fitToWidth = 1;
+            worksheet.pageSetup.fitToHeight = 1;
+            worksheet.pageSetup.margins = { left: 0.25, right: 0.25, top: 0.75, bottom: 0.75, header: 0.3, footer: 0.3 };
+            
+            worksheet.columns = [
+                { width: 3 }, { width: 33.29 }, { width: 12.86 }, { width: 12.86 }, { width: 12.86 },
+                { width: 12.86 }, { width: 12.86 }, { width: 12.86 }, { width: 12.86 }, { width: 12.86 }
+            ];
+            
+            for (let i = 1; i <= 43; i++) {
+                if (i !== 2) worksheet.getRow(i).height = 22;
+            }
+            
+            const COLORS = {
+                TITLE_BLUE: 'FF0000FF', HEADER_CYAN: 'FFA9ECEF', GRAY_CELL: 'FFF2F2F2',
+                GREEN_1: 'FFB3E3D5', GREEN_2: 'FFD8F1EA', GREEN_3: 'FFD3EBDA',
+                GREEN_4: 'FFDFECEB', BTX_BLUE: 'FFD1EFFA', LABWARE_BLUE: 'FF0000FF',
+                BLACK: 'FF404040', GRAY_BORDER: 'FFD9D9D9', WHITE: 'FFFFFFFF',
+                CYAN_TOTAL: 'FFA9ECEF'
+            };
+            
+            function styleCell(cell, config) {
+                cell.font = {
+                    name: 'Arial', size: config.fontSize || 11, bold: config.bold || false,
+                    color: { argb: config.fontColor || COLORS.BLACK }
+                };
+                if (config.fill) {
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: config.fill } };
+                }
+                cell.alignment = { horizontal: config.align || 'left', vertical: 'middle', wrapText: config.wrap || false };
+                if (config.border) {
+                    cell.border = {
+                        top: { style: 'thin', color: { argb: COLORS.GRAY_BORDER } },
+                        left: { style: 'thin', color: { argb: COLORS.GRAY_BORDER } },
+                        bottom: { style: 'thin', color: { argb: COLORS.GRAY_BORDER } },
+                        right: { style: 'thin', color: { argb: COLORS.GRAY_BORDER } }
+                    };
+                }
+            }
+            
+            try {
+                const logoResponse = await fetch('bv-logo.png');
+                if (logoResponse.ok) {
+                    const logoBlob = await logoResponse.blob();
+                    const logoArrayBuffer = await logoBlob.arrayBuffer();
+                    const logoBase64 = btoa(new Uint8Array(logoArrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), ''));
+                    const logoId = workbook.addImage({ base64: logoBase64, extension: 'png' });
+                    worksheet.addImage(logoId, { tl: { col: 1, row: 0 }, ext: { width: 140, height: 166 } });
+                }
+            } catch (error) {
+                console.warn('Logo loading skipped:', error.message);
+            }
+            
+            worksheet.mergeCells('B2:J2');
+            worksheet.getCell('B2').value = 'Sample Summary Report';
+            styleCell(worksheet.getCell('B2'), { fontSize: 16, bold: true, fontColor: COLORS.TITLE_BLUE, align: 'center' });
+            worksheet.getRow(2).height = 111;
+            
+            worksheet.mergeCells('B3:J3');
+            worksheet.getCell('B3').value = 'Project Number';
+            styleCell(worksheet.getCell('B3'), { fontSize: 13, bold: true, fill: COLORS.HEADER_CYAN, align: 'center', border: true });
+            
+            worksheet.getCell('B4').value = projectNumber;
+            styleCell(worksheet.getCell('B4'), { bold: true, fill: COLORS.GRAY_CELL, align: 'center', border: true });
+            
+            let col = 3;
+            resultsData.forEach(r => {
+                const cell = worksheet.getCell(4, col);
+                cell.value = r.sampleName;
+                styleCell(cell, { bold: true, fill: COLORS.GREEN_2, align: 'center', border: true });
+                col++;
+            });
+            
+            worksheet.mergeCells('B6:J6');
+            worksheet.getCell('B6').value = 'Glycol Results';
+            styleCell(worksheet.getCell('B6'), { fontSize: 11, bold: true, fill: COLORS.HEADER_CYAN, align: 'center', border: true });
+            
+            const dataRows = [
+                { row: 7, label: 'Water Content, ppm', data: resultsData.map(r => r.waterPpm), fmt: '0.00', fill: COLORS.GREEN_1 },
+                { row: 8, label: 'Water Content, %', data: resultsData.map(r => r.waterPct), fmt: '0.0000', fill: COLORS.GREEN_1 },
+                { row: 9, label: 'Total Organic, ppm', data: resultsData.map(r => r.totalOrganicPpm), fmt: '0.00', fill: COLORS.GREEN_1, dataFill: COLORS.WHITE },
+                { row: 10, label: 'Total Organic, %', data: resultsData.map(r => r.totalOrganicPct), fmt: '0.0000', fill: COLORS.GREEN_1 },
+                { row: 11, label: 'Glycol from GC', data: resultsData.map(r => r.glycolGc), fmt: '0.0000', fill: COLORS.GREEN_1 },
+                { row: 12, label: 'Condensate', data: resultsData.map(r => r.condensate), fmt: '0.0000', fill: COLORS.GREEN_1 },
+                { row: 13, label: 'Oil, %', data: resultsData.map(r => r.oilPct), fmt: '0.0000000', fill: COLORS.GREEN_2 },
+                { row: 14, label: 'Total Glycol, %', data: resultsData.map(r => r.totalGlycolPct), fmt: '0.0000000', fill: COLORS.GREEN_2 },
+                { row: 15, label: 'MEG, ppm', data: resultsData.map(r => r.megPpm), fmt: '0.00', fill: COLORS.GREEN_3 },
+                { row: 16, label: 'DEG, ppm', data: resultsData.map(r => r.degPpm), fmt: '0.00', fill: COLORS.GREEN_3 },
+                { row: 17, label: 'TEG, ppm', data: resultsData.map(r => r.tegPpm), fmt: '0.00', fill: COLORS.GREEN_3 },
+                { row: 18, label: 'Normalized MEG', data: resultsData.map(r => r.normalizedMEG), fmt: '0.0000000000', fill: COLORS.GREEN_4 },
+                { row: 19, label: 'Normalized DEG', data: resultsData.map(r => r.normalizedDEG), fmt: '0.0000000000', fill: COLORS.GREEN_4 },
+                { row: 20, label: 'Normalized TEG', data: resultsData.map(r => r.normalizedTEG), fmt: '0.0000000000', fill: COLORS.GREEN_4, dataFill: COLORS.WHITE },
+                { row: 21, label: 'Final MEG, %', data: resultsData.map(r => r.finalMEG), fmt: '0.0000000000', fill: COLORS.GREEN_4, dataFill: COLORS.WHITE },
+                { row: 22, label: 'Final DEG, %', data: resultsData.map(r => r.finalDEG), fmt: '0.0000000000', fill: COLORS.GREEN_4 },
+                { row: 23, label: 'Final TEG, %', data: resultsData.map(r => r.finalTEG), fmt: '0.0000000000', fill: COLORS.GREEN_4 },
+                { row: 24, label: '% oil/3 in sample', data: resultsData.map(r => r.oilDiv3), fmt: '0.0000000000', fill: COLORS.GREEN_4 }
+            ];
+            
+            dataRows.forEach(item => {
+                worksheet.getCell(item.row, 2).value = item.label;
+                styleCell(worksheet.getCell(item.row, 2), { bold: true, fill: item.fill, align: 'center', border: true });
+                
+                item.data.forEach((val, idx) => {
+                    const cell = worksheet.getCell(item.row, 3 + idx);
+                    cell.value = parseFloat(val);
+                    cell.numFmt = item.fmt;
+                    styleCell(cell, {
+                        fill: item.dataFill || COLORS.GRAY_CELL,
+                        align: 'center',
+                        border: true
+                    });
+                });
+            });
+            
+            worksheet.mergeCells('B26:J26');
+            worksheet.getCell('B26').value = 'Total Water Content + HC + MEG + DEG + TEG';
+            styleCell(worksheet.getCell('B26'), { fontSize: 11, bold: true, fill: COLORS.CYAN_TOTAL, align: 'center', border: true });
+            
+            col = 3;
+            resultsData.forEach(r => {
+                const cell = worksheet.getCell(27, col);
+                cell.value = parseFloat(r.totalCheck.toFixed(2));
+                cell.numFmt = '0.00';
+                styleCell(cell, { bold: true, fill: COLORS.CYAN_TOTAL, align: 'center', border: true });
+                col++;
+            });
+            
+            worksheet.mergeCells('B29:J29');
+            worksheet.getCell('B29').value = 'BTX Results';
+            styleCell(worksheet.getCell('B29'), { fontSize: 11, bold: true, fill: COLORS.HEADER_CYAN, align: 'center', border: true });
+            
+            const btxRows = [
+                { row: 30, label: 'Benzene wt %', value: benzeneWt },
+                { row: 31, label: 'Benzene mol %', value: benzeneMol },
+                { row: 32, label: 'Toluene wt %', value: tolueneWt },
+                { row: 33, label: 'Toluene mol %', value: tolueneMol },
+                { row: 34, label: 'Xylene wt %', value: xyleneWt },
+                { row: 35, label: 'Xylene mol %', value: xyleneMol }
+            ];
+            
+            btxRows.forEach(item => {
+                worksheet.getCell(item.row, 2).value = item.label;
+                styleCell(worksheet.getCell(item.row, 2), { bold: true, fill: COLORS.BTX_BLUE, align: 'center', border: true });
+                
+                worksheet.getCell(item.row, 3).value = item.value;
+                worksheet.getCell(item.row, 3).numFmt = '0.0';
+                
+                const isWhiteRow = (item.row === 30 || item.row === 32 || item.row === 34);
+                styleCell(worksheet.getCell(item.row, 3), {
+                    bold: true, fontColor: COLORS.TITLE_BLUE,
+                    fill: isWhiteRow ? COLORS.WHITE : COLORS.GRAY_CELL,
+                    align: 'center', border: true
+                });
+            });
+            
+            worksheet.getCell('B37').value = 'Notes,';
+            worksheet.getCell('C37').value = 'Oil is divided by 3 because its response on the GC is overstated by 3 times.';
+            worksheet.getCell('C38').value = 'All glycols are normalized to sum to Total Glycol %.';
+            
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${projectNumber}_Glycol_Normalization.xlsx`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            alert(`✅ Excel exported successfully!\n📄 ${projectNumber}_Glycol_Normalization.xlsx\n\n📋 Normalization Method Applied`);
+        }
+    </script>
+</body>
+</html>
+                
