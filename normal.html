@@ -552,18 +552,24 @@
             worksheet.getCell('B6').value = 'Glycol Results';
             styleCell(worksheet.getCell('B6'), { fontSize: 11, bold: true, fill: COLORS.HEADER_CYAN, align: 'center', border: true });
             
-            // ✅ Row 7 (C7:J7) - WHITE background
-            for (let c = 3; c <= 10; c++) {
-                styleCell(worksheet.getCell(7, c), { fill: COLORS.WHITE, border: true });
-            }
+            // ✅ ROW 7 - Water Content, ppm (C7:J7 WHITE background)
+            worksheet.getCell('B7').value = 'Water Content, ppm';
+            styleCell(worksheet.getCell('B7'), { bold: true, fill: COLORS.GREEN_1, align: 'center', border: true });
             
-            // ✅ Row 8 (C8:J8) - Blue font, bold, underline, #F2F2F2 background
-            worksheet.getCell('B8').value = 'Water Content, ppm';
+            resultsData.forEach((r, idx) => {
+                const cell = worksheet.getCell(7, 3 + idx);
+                cell.value = parseFloat(r.waterPpm);
+                cell.numFmt = '#,##0.00';
+                styleCell(cell, { fill: COLORS.WHITE, align: 'center', border: true });
+            });
+            
+            // ✅ ROW 8 - Water Content, % (C8:J8 Blue font, bold, underline, #F2F2F2 background)
+            worksheet.getCell('B8').value = 'Water Content, %';
             styleCell(worksheet.getCell('B8'), { bold: true, fill: COLORS.GREEN_1, align: 'center', border: true });
             
             resultsData.forEach((r, idx) => {
                 const cell = worksheet.getCell(8, 3 + idx);
-                cell.value = parseFloat(r.waterPpm);
+                cell.value = parseFloat(r.waterPct);
                 cell.numFmt = '#,##0.00';
                 styleCell(cell, {
                     bold: true,
@@ -575,23 +581,24 @@
                 });
             });
             
-            worksheet.getCell('B9').value = 'Water Content, %';
+            // ✅ ROW 9 - Total Organic, ppm
+            worksheet.getCell('B9').value = 'Total Organic, ppm';
             styleCell(worksheet.getCell('B9'), { bold: true, fill: COLORS.GREEN_1, align: 'center', border: true });
             
             resultsData.forEach((r, idx) => {
                 const cell = worksheet.getCell(9, 3 + idx);
-                cell.value = parseFloat(r.waterPct);
+                cell.value = parseFloat(r.totalOrganicPpm);
                 cell.numFmt = '#,##0.00';
                 styleCell(cell, { fill: COLORS.GRAY_CELL, align: 'center', border: true });
             });
             
-            // ✅ Row 10 (C10:J10) - Blue font color
-            worksheet.getCell('B10').value = 'Total Organic, ppm';
+            // ✅ ROW 10 - Total Organic, % (C10:J10 Blue font color)
+            worksheet.getCell('B10').value = 'Total Organic, %';
             styleCell(worksheet.getCell('B10'), { bold: true, fill: COLORS.GREEN_1, align: 'center', border: true });
             
             resultsData.forEach((r, idx) => {
                 const cell = worksheet.getCell(10, 3 + idx);
-                cell.value = parseFloat(r.totalOrganicPpm);
+                cell.value = parseFloat(r.totalOrganicPct);
                 cell.numFmt = '#,##0.00';
                 styleCell(cell, {
                     fontColor: COLORS.BLUE,
@@ -601,36 +608,35 @@
                 });
             });
             
-            // ✅ Rows 11-12 (B11:B12) - #DFECEB background, (C11:J12) - WHITE background
-            const rows11_12 = [
-                { row: 11, label: 'Total Organic, %', data: resultsData.map(r => r.totalOrganicPct), fmt: '#,##0.00' },
-                { row: 12, label: 'Glycol from GC', data: resultsData.map(r => r.glycolGc), fmt: '#,##0.00' }
-            ];
+            // ✅ ROW 11 - Glycol from GC (B11 #DFECEB, C11:J11 WHITE)
+            worksheet.getCell('B11').value = 'Glycol from GC';
+            styleCell(worksheet.getCell('B11'), { bold: true, fill: COLORS.GREEN_4, align: 'center', border: true });
             
-            rows11_12.forEach(item => {
-                worksheet.getCell(item.row, 2).value = item.label;
-                styleCell(worksheet.getCell(item.row, 2), {
-                    bold: true,
-                    fill: COLORS.GREEN_4,
-                    align: 'center',
-                    border: true
-                });
-                
-                item.data.forEach((val, idx) => {
-                    const cell = worksheet.getCell(item.row, 3 + idx);
-                    cell.value = parseFloat(val);
-                    cell.numFmt = item.fmt;
-                    styleCell(cell, { fill: COLORS.WHITE, align: 'center', border: true });
-                });
+            resultsData.forEach((r, idx) => {
+                const cell = worksheet.getCell(11, 3 + idx);
+                cell.value = parseFloat(r.glycolGc);
+                cell.numFmt = '#,##0.00';
+                styleCell(cell, { fill: COLORS.WHITE, align: 'center', border: true });
             });
             
-            // ✅ Row 13 (C13:J13) - Bold, blue, underline
-            worksheet.getCell('B13').value = 'Condensate';
-            styleCell(worksheet.getCell('B13'), { bold: true, fill: COLORS.GREEN_1, align: 'center', border: true });
+            // ✅ ROW 12 - Condensate (B12 #DFECEB, C12:J12 WHITE)
+            worksheet.getCell('B12').value = 'Condensate';
+            styleCell(worksheet.getCell('B12'), { bold: true, fill: COLORS.GREEN_4, align: 'center', border: true });
+            
+            resultsData.forEach((r, idx) => {
+                const cell = worksheet.getCell(12, 3 + idx);
+                cell.value = parseFloat(r.condensate);
+                cell.numFmt = '#,##0.00';
+                styleCell(cell, { fill: COLORS.WHITE, align: 'center', border: true });
+            });
+            
+            // ✅ ROW 13 - Oil, % (C13:J13 Bold, blue, underline)
+            worksheet.getCell('B13').value = 'Oil, %';
+            styleCell(worksheet.getCell('B13'), { bold: true, fill: COLORS.GREEN_2, align: 'center', border: true });
             
             resultsData.forEach((r, idx) => {
                 const cell = worksheet.getCell(13, 3 + idx);
-                cell.value = parseFloat(r.condensate);
+                cell.value = parseFloat(r.oilPct);
                 cell.numFmt = '#,##0.00';
                 styleCell(cell, {
                     bold: true,
@@ -642,81 +648,89 @@
                 });
             });
             
-            const dataRows14 = [
-                { row: 14, label: 'Oil, %', data: resultsData.map(r => r.oilPct), fmt: '#,##0.00', fill: COLORS.GREEN_2 }
-            ];
+            // ROW 14 - Total Glycol, %
+            worksheet.getCell('B14').value = 'Total Glycol, %';
+            styleCell(worksheet.getCell('B14'), { bold: true, fill: COLORS.GREEN_2, align: 'center', border: true });
             
-            dataRows14.forEach(item => {
-                worksheet.getCell(item.row, 2).value = item.label;
-                styleCell(worksheet.getCell(item.row, 2), {
-                    bold: true,
-                    fill: item.fill,
-                    align: 'center',
-                    border: true
-                });
-                
-                item.data.forEach((val, idx) => {
-                    const cell = worksheet.getCell(item.row, 3 + idx);
-                    cell.value = parseFloat(val);
-                    cell.numFmt = item.fmt;
-                    styleCell(cell, { fill: COLORS.GRAY_CELL, align: 'center', border: true });
-                });
+            resultsData.forEach((r, idx) => {
+                const cell = worksheet.getCell(14, 3 + idx);
+                cell.value = parseFloat(r.totalGlycolPct);
+                cell.numFmt = '#,##0.00';
+                styleCell(cell, { fill: COLORS.GRAY_CELL, align: 'center', border: true });
             });
             
-            // ✅ Rows 15-17 (C15:J17) - WHITE background
-            const rows15_17 = [
-                { row: 15, label: 'Total Glycol, %', data: resultsData.map(r => r.totalGlycolPct), fmt: '#,##0.00', fill: COLORS.GREEN_2 },
-                { row: 16, label: 'MEG, ppm', data: resultsData.map(r => r.megPpm), fmt: '#,##0.00', fill: COLORS.GREEN_3 },
-                { row: 17, label: 'DEG, ppm', data: resultsData.map(r => r.degPpm), fmt: '#,##0.00', fill: COLORS.GREEN_3 }
-            ];
+            // ✅ ROW 15 - MEG, ppm (C15:J15 WHITE)
+            worksheet.getCell('B15').value = 'MEG, ppm';
+            styleCell(worksheet.getCell('B15'), { bold: true, fill: COLORS.GREEN_3, align: 'center', border: true });
             
-            rows15_17.forEach(item => {
-                worksheet.getCell(item.row, 2).value = item.label;
-                styleCell(worksheet.getCell(item.row, 2), {
-                    bold: true,
-                    fill: item.fill,
-                    align: 'center',
-                    border: true
-                });
-                
-                item.data.forEach((val, idx) => {
-                    const cell = worksheet.getCell(item.row, 3 + idx);
-                    cell.value = parseFloat(val);
-                    cell.numFmt = item.fmt;
-                    styleCell(cell, { fill: COLORS.WHITE, align: 'center', border: true });
-                });
+            resultsData.forEach((r, idx) => {
+                const cell = worksheet.getCell(15, 3 + idx);
+                cell.value = parseFloat(r.megPpm);
+                cell.numFmt = '#,##0.00';
+                styleCell(cell, { fill: COLORS.WHITE, align: 'center', border: true });
             });
             
-            // ✅ Rows 18-20 (B18:B20) - #A9ECEF background
-            const rows18_20 = [
-                { row: 18, label: 'TEG, ppm', data: resultsData.map(r => r.tegPpm), fmt: '#,##0.00' },
-                { row: 19, label: 'Normalized MEG', data: resultsData.map(r => r.normalizedMEG), fmt: '#,##0.00' },
-                { row: 20, label: 'Normalized DEG', data: resultsData.map(r => r.normalizedDEG), fmt: '#,##0.00' }
-            ];
+            // ✅ ROW 16 - DEG, ppm (C16:J16 WHITE)
+            worksheet.getCell('B16').value = 'DEG, ppm';
+            styleCell(worksheet.getCell('B16'), { bold: true, fill: COLORS.GREEN_3, align: 'center', border: true });
             
-            rows18_20.forEach(item => {
-                worksheet.getCell(item.row, 2).value = item.label;
-                styleCell(worksheet.getCell(item.row, 2), {
-                    bold: true,
-                    fill: COLORS.HEADER_CYAN,
-                    align: 'center',
-                    border: true
-                });
-                
-                item.data.forEach((val, idx) => {
-                    const cell = worksheet.getCell(item.row, 3 + idx);
-                    cell.value = parseFloat(val);
-                    cell.numFmt = item.fmt;
-                    styleCell(cell, { fill: COLORS.GRAY_CELL, align: 'center', border: true });
-                });
+            resultsData.forEach((r, idx) => {
+                const cell = worksheet.getCell(16, 3 + idx);
+                cell.value = parseFloat(r.degPpm);
+                cell.numFmt = '#,##0.00';
+                styleCell(cell, { fill: COLORS.WHITE, align: 'center', border: true });
             });
             
-            // ✅ Rows 21-24 (C21:J24) - Bold, blue, underline
+            // ✅ ROW 17 - TEG, ppm (C17:J17 WHITE)
+            worksheet.getCell('B17').value = 'TEG, ppm';
+            styleCell(worksheet.getCell('B17'), { bold: true, fill: COLORS.GREEN_3, align: 'center', border: true });
+            
+            resultsData.forEach((r, idx) => {
+                const cell = worksheet.getCell(17, 3 + idx);
+                cell.value = parseFloat(r.tegPpm);
+                cell.numFmt = '#,##0.00';
+                styleCell(cell, { fill: COLORS.WHITE, align: 'center', border: true });
+            });
+            
+            // ✅ ROW 18 - Normalized MEG (B18 #A9ECEF)
+            worksheet.getCell('B18').value = 'Normalized MEG';
+            styleCell(worksheet.getCell('B18'), { bold: true, fill: COLORS.HEADER_CYAN, align: 'center', border: true });
+            
+            resultsData.forEach((r, idx) => {
+                const cell = worksheet.getCell(18, 3 + idx);
+                cell.value = parseFloat(r.normalizedMEG);
+                cell.numFmt = '#,##0.00';
+                styleCell(cell, { fill: COLORS.GRAY_CELL, align: 'center', border: true });
+            });
+            
+            // ✅ ROW 19 - Normalized DEG (B19 #A9ECEF)
+            worksheet.getCell('B19').value = 'Normalized DEG';
+            styleCell(worksheet.getCell('B19'), { bold: true, fill: COLORS.HEADER_CYAN, align: 'center', border: true });
+            
+            resultsData.forEach((r, idx) => {
+                const cell = worksheet.getCell(19, 3 + idx);
+                cell.value = parseFloat(r.normalizedDEG);
+                cell.numFmt = '#,##0.00';
+                styleCell(cell, { fill: COLORS.GRAY_CELL, align: 'center', border: true });
+            });
+            
+            // ✅ ROW 20 - Normalized TEG (B20 #A9ECEF)
+            worksheet.getCell('B20').value = 'Normalized TEG';
+            styleCell(worksheet.getCell('B20'), { bold: true, fill: COLORS.HEADER_CYAN, align: 'center', border: true });
+            
+            resultsData.forEach((r, idx) => {
+                const cell = worksheet.getCell(20, 3 + idx);
+                cell.value = parseFloat(r.normalizedTEG);
+                cell.numFmt = '#,##0.00';
+                styleCell(cell, { fill: COLORS.GRAY_CELL, align: 'center', border: true });
+            });
+            
+            // ✅ ROWS 21-24 - Final values (C21:J24 Bold, blue, underline, WHITE background)
             const rows21_24 = [
-                { row: 21, label: 'Normalized TEG', data: resultsData.map(r => r.normalizedTEG), fmt: '#,##0.00', fill: COLORS.GREEN_4 },
-                { row: 22, label: 'Final MEG, %', data: resultsData.map(r => r.finalMEG), fmt: '#,##0.00', fill: COLORS.GREEN_4 },
-                { row: 23, label: 'Final DEG, %', data: resultsData.map(r => r.finalDEG), fmt: '#,##0.00', fill: COLORS.GREEN_4 },
-                { row: 24, label: 'Final TEG, %', data: resultsData.map(r => r.finalTEG), fmt: '#,##0.00', fill: COLORS.GREEN_4 }
+                { row: 21, label: 'Final MEG, %', data: resultsData.map(r => r.finalMEG), fill: COLORS.GREEN_4 },
+                { row: 22, label: 'Final DEG, %', data: resultsData.map(r => r.finalDEG), fill: COLORS.GREEN_4 },
+                { row: 23, label: 'Final TEG, %', data: resultsData.map(r => r.finalTEG), fill: COLORS.GREEN_4 },
+                { row: 24, label: '% oil/3 in sample', data: resultsData.map(r => r.oilDiv3), fill: COLORS.GREEN_4 }
             ];
             
             rows21_24.forEach(item => {
@@ -731,7 +745,7 @@
                 item.data.forEach((val, idx) => {
                     const cell = worksheet.getCell(item.row, 3 + idx);
                     cell.value = parseFloat(val);
-                    cell.numFmt = item.fmt;
+                    cell.numFmt = '#,##0.00';
                     styleCell(cell, {
                         bold: true,
                         underline: true,
@@ -743,7 +757,7 @@
                 });
             });
             
-            // ✅ Row 25 (B25) - Wrapped text with adjusted row height, (C25:J25) - #27CED7 background
+            // ✅ ROW 25 - Total (B25 wrapped text, C25:J25 #27CED7)
             worksheet.getCell('B25').value = 'Total Water Content + HC + MEG + DEG + TEG';
             worksheet.getCell('B25').alignment = { wrapText: true, vertical: 'middle', horizontal: 'center' };
             styleCell(worksheet.getCell('B25'), {
