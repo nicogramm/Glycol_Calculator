@@ -140,7 +140,7 @@
         </div>
     </div>
 
-        <script>
+    <script>
         let sampleCount = 2;
         let resultsData = [];
         
@@ -191,15 +191,15 @@
                         <input type="text" class="sample-name-input" id="sampleName${i}" value="${sampleNum}" placeholder="Sample ID">
                     </div>
                     
-                        <div class="sample-input">
-                    <label>Water Content (ppm)</label>
-                    <input type="number" id="waterPpm${i}" step="0.01" placeholder="0.00">
-                </div>
+                    <div class="sample-input">
+                        <label>Water Content (ppm)</label>
+                        <input type="number" id="waterPpm${i}" step="0.01" placeholder="0.00">
+                    </div>
 
-                <div class="sample-input disabled">
-                    <label>Total Organic (ppm) <span class="calculated-badge">AUTO</span></label>
-                    <input type="number" id="totalOrganicPpm${i}" disabled placeholder="Calculated" value="0">
-                </div>
+                    <div class="sample-input disabled">
+                        <label>Total Organic (ppm) <span class="calculated-badge">AUTO</span></label>
+                        <input type="number" id="totalOrganicPpm${i}" disabled placeholder="Calculated" value="0">
+                    </div>
                     
                     <div class="sample-input">
                         <label>Glycol from GC (%)</label>
@@ -230,6 +230,13 @@
             }
         }
         
+        function formatNumber(num, decimals) {
+            return num.toLocaleString('en-US', {
+                minimumFractionDigits: decimals,
+                maximumFractionDigits: decimals
+            });
+        }
+        
         function calculateAll() {
             resultsData = [];
             const projectNumber = document.getElementById('projectNumber').value || 'N/A';
@@ -238,7 +245,7 @@
                 const sampleName = document.getElementById(`sampleName${i}`).value;
                 
                 const waterPpm = parseFloat(document.getElementById(`waterPpm${i}`).value) || 0;
-                const totalOrganicPpm = 1000000 - waterPpm;  // ✅ AUTO-CALCULATED
+                const totalOrganicPpm = 1000000 - waterPpm;
                 const glycolGc = parseFloat(document.getElementById(`glycolGc${i}`).value) || 100;
                 const condensate = parseFloat(document.getElementById(`condensate${i}`).value) || 0;
                 const megPpm = parseFloat(document.getElementById(`meg${i}`).value) || 0;
@@ -319,86 +326,86 @@
                         </tr>
                         <tr>
                             <td>Water Content, ppm</td>
-                            ${resultsData.map(r => `<td>${r.waterPpm.toFixed(2)}</td>`).join('')}
+                            ${resultsData.map(r => `<td>${formatNumber(r.waterPpm, 2)}</td>`).join('')}
                         </tr>
                         <tr>
                             <td>Water Content, %</td>
-                            ${resultsData.map(r => `<td>${r.waterPct.toFixed(4)}</td>`).join('')}
+                            ${resultsData.map(r => `<td>${formatNumber(r.waterPct, 2)}</td>`).join('')}
                         </tr>
                         <tr>
                             <td>Total Organic, ppm</td>
-                            ${resultsData.map(r => `<td>${r.totalOrganicPpm.toFixed(2)}</td>`).join('')}
+                            ${resultsData.map(r => `<td>${formatNumber(r.totalOrganicPpm, 2)}</td>`).join('')}
                         </tr>
                         <tr>
                             <td>Total Organic, %</td>
-                            ${resultsData.map(r => `<td>${r.totalOrganicPct.toFixed(4)}</td>`).join('')}
+                            ${resultsData.map(r => `<td>${formatNumber(r.totalOrganicPct, 2)}</td>`).join('')}
                         </tr>
                         <tr>
                             <td>Glycol from GC</td>
-                            ${resultsData.map(r => `<td>${r.glycolGc.toFixed(4)}</td>`).join('')}
+                            ${resultsData.map(r => `<td>${formatNumber(r.glycolGc, 2)}</td>`).join('')}
                         </tr>
                         <tr>
                             <td>Condensate</td>
-                            ${resultsData.map(r => `<td>${r.condensate.toFixed(4)}</td>`).join('')}
+                            ${resultsData.map(r => `<td>${formatNumber(r.condensate, 2)}</td>`).join('')}
                         </tr>
                         <tr>
                             <td>Oil, %</td>
-                            ${resultsData.map(r => `<td>${r.oilPct.toFixed(7)}</td>`).join('')}
+                            ${resultsData.map(r => `<td>${formatNumber(r.oilPct, 2)}</td>`).join('')}
                         </tr>
                         <tr>
                             <td>Total Glycol, %</td>
-                            ${resultsData.map(r => `<td>${r.totalGlycolPct.toFixed(7)}</td>`).join('')}
+                            ${resultsData.map(r => `<td>${formatNumber(r.totalGlycolPct, 2)}</td>`).join('')}
                         </tr>
                         <tr>
                             <td>MEG, ppm</td>
-                            ${resultsData.map(r => `<td>${r.megPpm.toFixed(2)}</td>`).join('')}
+                            ${resultsData.map(r => `<td>${formatNumber(r.megPpm, 2)}</td>`).join('')}
                         </tr>
                         <tr>
                             <td>DEG, ppm</td>
-                            ${resultsData.map(r => `<td>${r.degPpm.toFixed(2)}</td>`).join('')}
+                            ${resultsData.map(r => `<td>${formatNumber(r.degPpm, 2)}</td>`).join('')}
                         </tr>
                         <tr>
                             <td>TEG, ppm</td>
-                            ${resultsData.map(r => `<td>${r.tegPpm.toFixed(2)}</td>`).join('')}
+                            ${resultsData.map(r => `<td>${formatNumber(r.tegPpm, 2)}</td>`).join('')}
                         </tr>
                         <tr class="highlight">
                             <td><strong>Normalized MEG</strong></td>
-                            ${resultsData.map(r => `<td><strong>${r.normalizedMEG.toFixed(10)}</strong></td>`).join('')}
+                            ${resultsData.map(r => `<td><strong>${formatNumber(r.normalizedMEG, 2)}</strong></td>`).join('')}
                         </tr>
                         <tr class="highlight">
                             <td><strong>Normalized DEG</strong></td>
-                            ${resultsData.map(r => `<td><strong>${r.normalizedDEG.toFixed(10)}</strong></td>`).join('')}
+                            ${resultsData.map(r => `<td><strong>${formatNumber(r.normalizedDEG, 2)}</strong></td>`).join('')}
                         </tr>
                         <tr class="highlight">
                             <td><strong>Normalized TEG</strong></td>
-                            ${resultsData.map(r => `<td><strong>${r.normalizedTEG.toFixed(10)}</strong></td>`).join('')}
+                            ${resultsData.map(r => `<td><strong>${formatNumber(r.normalizedTEG, 2)}</strong></td>`).join('')}
                         </tr>
                         <tr>
                             <td>Final MEG, %</td>
-                            ${resultsData.map(r => `<td>${r.finalMEG.toFixed(10)}</td>`).join('')}
+                            ${resultsData.map(r => `<td>${formatNumber(r.finalMEG, 2)}</td>`).join('')}
                         </tr>
                         <tr>
                             <td>Final DEG, %</td>
-                            ${resultsData.map(r => `<td>${r.finalDEG.toFixed(10)}</td>`).join('')}
+                            ${resultsData.map(r => `<td>${formatNumber(r.finalDEG, 2)}</td>`).join('')}
                         </tr>
                         <tr>
                             <td>Final TEG, %</td>
-                            ${resultsData.map(r => `<td>${r.finalTEG.toFixed(10)}</td>`).join('')}
+                            ${resultsData.map(r => `<td>${formatNumber(r.finalTEG, 2)}</td>`).join('')}
                         </tr>
                         <tr>
                             <td>% oil/3 in sample</td>
-                            ${resultsData.map(r => `<td>${r.oilDiv3.toFixed(10)}</td>`).join('')}
+                            ${resultsData.map(r => `<td>${formatNumber(r.oilDiv3, 2)}</td>`).join('')}
                         </tr>
                         <tr class="total-check">
                             <td><strong>Total Check (Water + Oil + MEG + DEG + TEG)</strong></td>
-                            ${resultsData.map(r => `<td><strong>${r.totalCheck.toFixed(2)}</strong></td>`).join('')}
+                            ${resultsData.map(r => `<td><strong>${formatNumber(r.totalCheck, 2)}</strong></td>`).join('')}
                         </tr>
                         <tr class="btx-section-row">
                             <td colspan="${resultsData.length + 1}"><strong>BTX Results</strong></td>
                         </tr>
                         <tr>
                             <td>Benzene wt %</td>
-                            <td colspan="${resultsData.length}">${benzeneWt.toFixed(2)}</td>
+                            <td colspan="${resultsData.length}">${formatNumber(benzeneWt, 2)}</td>
                         </tr>
                         <tr>
                             <td>Benzene mol %</td>
@@ -406,7 +413,7 @@
                         </tr>
                         <tr>
                             <td>Toluene wt %</td>
-                            <td colspan="${resultsData.length}">${tolueneWt.toFixed(2)}</td>
+                            <td colspan="${resultsData.length}">${formatNumber(tolueneWt, 2)}</td>
                         </tr>
                         <tr>
                             <td>Toluene mol %</td>
@@ -414,7 +421,7 @@
                         </tr>
                         <tr>
                             <td>Xylene wt %</td>
-                            <td colspan="${resultsData.length}">${xyleneWt.toFixed(2)}</td>
+                            <td colspan="${resultsData.length}">${formatNumber(xyleneWt, 2)}</td>
                         </tr>
                         <tr>
                             <td>Xylene mol %</td>
@@ -425,7 +432,7 @@
                 
                 <div class="info-box" style="margin-top: 20px;">
                     <strong>📋 Notes:</strong><br>
-                                        • Oil = (Total Organic % × Condensate / 100) ÷ 3<br>
+                    • Oil = (Total Organic % × Condensate / 100) ÷ 3<br>
                     • All glycols normalized to Total Glycol %<br>
                     • Total Check should equal 100.00%
                 </div>
@@ -466,22 +473,37 @@
             }
             
             const COLORS = {
-                TITLE_BLUE: 'FF0000FF', HEADER_CYAN: 'FFA9ECEF', GRAY_CELL: 'FFF2F2F2',
-                GREEN_1: 'FFB3E3D5', GREEN_2: 'FFD8F1EA', GREEN_3: 'FFD3EBDA',
-                GREEN_4: 'FFDFECEB', BTX_BLUE: 'FFD1EFFA', LABWARE_BLUE: 'FF0000FF',
-                BLACK: 'FF404040', GRAY_BORDER: 'FFD9D9D9', WHITE: 'FFFFFFFF',
-                CYAN_TOTAL: 'FFA9ECEF'
+                TITLE_BLUE: 'FF0000FF',
+                HEADER_CYAN: 'FFA9ECEF',
+                GRAY_CELL: 'FFF2F2F2',
+                GREEN_1: 'FFB3E3D5',
+                GREEN_2: 'FFD8F1EA',
+                GREEN_3: 'FFD3EBDA',
+                GREEN_4: 'FFDFECEB',
+                BTX_BLUE: 'FFD1EFFA',
+                BLACK: 'FF404040',
+                GRAY_BORDER: 'FFD9D9D9',
+                WHITE: 'FFFFFFFF',
+                CYAN_TOTAL: 'FF27CED7',
+                BLUE: 'FF0000FF'
             };
             
             function styleCell(cell, config) {
                 cell.font = {
-                    name: 'Arial', size: config.fontSize || 11, bold: config.bold || false,
+                    name: 'Arial',
+                    size: config.fontSize || 11,
+                    bold: config.bold || false,
+                    underline: config.underline || false,
                     color: { argb: config.fontColor || COLORS.BLACK }
                 };
                 if (config.fill) {
                     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: config.fill } };
                 }
-                cell.alignment = { horizontal: config.align || 'left', vertical: 'middle', wrapText: config.wrap || false };
+                cell.alignment = {
+                    horizontal: config.align || 'left',
+                    vertical: 'middle',
+                    wrapText: config.wrap || false
+                };
                 if (config.border) {
                     cell.border = {
                         top: { style: 'thin', color: { argb: COLORS.GRAY_BORDER } },
@@ -514,6 +536,7 @@
             worksheet.getCell('B3').value = 'Project Number';
             styleCell(worksheet.getCell('B3'), { fontSize: 13, bold: true, fill: COLORS.HEADER_CYAN, align: 'center', border: true });
             
+            // Row 4 - Project Number value and sample names
             worksheet.getCell('B4').value = projectNumber;
             styleCell(worksheet.getCell('B4'), { bold: true, fill: COLORS.GRAY_CELL, align: 'center', border: true });
             
@@ -529,87 +552,266 @@
             worksheet.getCell('B6').value = 'Glycol Results';
             styleCell(worksheet.getCell('B6'), { fontSize: 11, bold: true, fill: COLORS.HEADER_CYAN, align: 'center', border: true });
             
-            const dataRows = [
-                { row: 7, label: 'Water Content, ppm', data: resultsData.map(r => r.waterPpm), fmt: '0.00', fill: COLORS.GREEN_1 },
-                { row: 8, label: 'Water Content, %', data: resultsData.map(r => r.waterPct), fmt: '0.0000', fill: COLORS.GREEN_1 },
-                { row: 9, label: 'Total Organic, ppm', data: resultsData.map(r => r.totalOrganicPpm), fmt: '0.00', fill: COLORS.GREEN_1, dataFill: COLORS.WHITE },
-                { row: 10, label: 'Total Organic, %', data: resultsData.map(r => r.totalOrganicPct), fmt: '0.0000', fill: COLORS.GREEN_1 },
-                { row: 11, label: 'Glycol from GC', data: resultsData.map(r => r.glycolGc), fmt: '0.0000', fill: COLORS.GREEN_1 },
-                { row: 12, label: 'Condensate', data: resultsData.map(r => r.condensate), fmt: '0.0000', fill: COLORS.GREEN_1 },
-                { row: 13, label: 'Oil, %', data: resultsData.map(r => r.oilPct), fmt: '0.0000000', fill: COLORS.GREEN_2 },
-                { row: 14, label: 'Total Glycol, %', data: resultsData.map(r => r.totalGlycolPct), fmt: '0.0000000', fill: COLORS.GREEN_2 },
-                { row: 15, label: 'MEG, ppm', data: resultsData.map(r => r.megPpm), fmt: '0.00', fill: COLORS.GREEN_3 },
-                { row: 16, label: 'DEG, ppm', data: resultsData.map(r => r.degPpm), fmt: '0.00', fill: COLORS.GREEN_3 },
-                { row: 17, label: 'TEG, ppm', data: resultsData.map(r => r.tegPpm), fmt: '0.00', fill: COLORS.GREEN_3 },
-                { row: 18, label: 'Normalized MEG', data: resultsData.map(r => r.normalizedMEG), fmt: '0.0000000000', fill: COLORS.GREEN_4 },
-                { row: 19, label: 'Normalized DEG', data: resultsData.map(r => r.normalizedDEG), fmt: '0.0000000000', fill: COLORS.GREEN_4 },
-                { row: 20, label: 'Normalized TEG', data: resultsData.map(r => r.normalizedTEG), fmt: '0.0000000000', fill: COLORS.GREEN_4, dataFill: COLORS.WHITE },
-                { row: 21, label: 'Final MEG, %', data: resultsData.map(r => r.finalMEG), fmt: '0.0000000000', fill: COLORS.GREEN_4, dataFill: COLORS.WHITE },
-                { row: 22, label: 'Final DEG, %', data: resultsData.map(r => r.finalDEG), fmt: '0.0000000000', fill: COLORS.GREEN_4 },
-                { row: 23, label: 'Final TEG, %', data: resultsData.map(r => r.finalTEG), fmt: '0.0000000000', fill: COLORS.GREEN_4 },
-                { row: 24, label: '% oil/3 in sample', data: resultsData.map(r => r.oilDiv3), fmt: '0.0000000000', fill: COLORS.GREEN_4 }
+            // ✅ Row 7 (C7:J7) - WHITE background
+            for (let c = 3; c <= 10; c++) {
+                styleCell(worksheet.getCell(7, c), { fill: COLORS.WHITE, border: true });
+            }
+            
+            // ✅ Row 8 (C8:J8) - Blue font, bold, underline, #F2F2F2 background
+            worksheet.getCell('B8').value = 'Water Content, ppm';
+            styleCell(worksheet.getCell('B8'), { bold: true, fill: COLORS.GREEN_1, align: 'center', border: true });
+            
+            resultsData.forEach((r, idx) => {
+                const cell = worksheet.getCell(8, 3 + idx);
+                cell.value = parseFloat(r.waterPpm);
+                cell.numFmt = '#,##0.00';
+                styleCell(cell, {
+                    bold: true,
+                    underline: true,
+                    fontColor: COLORS.BLUE,
+                    fill: COLORS.GRAY_CELL,
+                    align: 'center',
+                    border: true
+                });
+            });
+            
+            worksheet.getCell('B9').value = 'Water Content, %';
+            styleCell(worksheet.getCell('B9'), { bold: true, fill: COLORS.GREEN_1, align: 'center', border: true });
+            
+            resultsData.forEach((r, idx) => {
+                const cell = worksheet.getCell(9, 3 + idx);
+                cell.value = parseFloat(r.waterPct);
+                cell.numFmt = '#,##0.00';
+                styleCell(cell, { fill: COLORS.GRAY_CELL, align: 'center', border: true });
+            });
+            
+            // ✅ Row 10 (C10:J10) - Blue font color
+            worksheet.getCell('B10').value = 'Total Organic, ppm';
+            styleCell(worksheet.getCell('B10'), { bold: true, fill: COLORS.GREEN_1, align: 'center', border: true });
+            
+            resultsData.forEach((r, idx) => {
+                const cell = worksheet.getCell(10, 3 + idx);
+                cell.value = parseFloat(r.totalOrganicPpm);
+                cell.numFmt = '#,##0.00';
+                styleCell(cell, {
+                    fontColor: COLORS.BLUE,
+                    fill: COLORS.WHITE,
+                    align: 'center',
+                    border: true
+                });
+            });
+            
+            // ✅ Rows 11-12 (B11:B12) - #DFECEB background, (C11:J12) - WHITE background
+            const rows11_12 = [
+                { row: 11, label: 'Total Organic, %', data: resultsData.map(r => r.totalOrganicPct), fmt: '#,##0.00' },
+                { row: 12, label: 'Glycol from GC', data: resultsData.map(r => r.glycolGc), fmt: '#,##0.00' }
             ];
             
-            dataRows.forEach(item => {
+            rows11_12.forEach(item => {
                 worksheet.getCell(item.row, 2).value = item.label;
-                styleCell(worksheet.getCell(item.row, 2), { bold: true, fill: item.fill, align: 'center', border: true });
+                styleCell(worksheet.getCell(item.row, 2), {
+                    bold: true,
+                    fill: COLORS.GREEN_4,
+                    align: 'center',
+                    border: true
+                });
+                
+                item.data.forEach((val, idx) => {
+                    const cell = worksheet.getCell(item.row, 3 + idx);
+                    cell.value = parseFloat(val);
+                    cell.numFmt = item.fmt;
+                    styleCell(cell, { fill: COLORS.WHITE, align: 'center', border: true });
+                });
+            });
+            
+            // ✅ Row 13 (C13:J13) - Bold, blue, underline
+            worksheet.getCell('B13').value = 'Condensate';
+            styleCell(worksheet.getCell('B13'), { bold: true, fill: COLORS.GREEN_1, align: 'center', border: true });
+            
+            resultsData.forEach((r, idx) => {
+                const cell = worksheet.getCell(13, 3 + idx);
+                cell.value = parseFloat(r.condensate);
+                cell.numFmt = '#,##0.00';
+                styleCell(cell, {
+                    bold: true,
+                    underline: true,
+                    fontColor: COLORS.BLUE,
+                    fill: COLORS.GRAY_CELL,
+                    align: 'center',
+                    border: true
+                });
+            });
+            
+            const dataRows14 = [
+                { row: 14, label: 'Oil, %', data: resultsData.map(r => r.oilPct), fmt: '#,##0.00', fill: COLORS.GREEN_2 }
+            ];
+            
+            dataRows14.forEach(item => {
+                worksheet.getCell(item.row, 2).value = item.label;
+                styleCell(worksheet.getCell(item.row, 2), {
+                    bold: true,
+                    fill: item.fill,
+                    align: 'center',
+                    border: true
+                });
+                
+                item.data.forEach((val, idx) => {
+                    const cell = worksheet.getCell(item.row, 3 + idx);
+                    cell.value = parseFloat(val);
+                    cell.numFmt = item.fmt;
+                    styleCell(cell, { fill: COLORS.GRAY_CELL, align: 'center', border: true });
+                });
+            });
+            
+            // ✅ Rows 15-17 (C15:J17) - WHITE background
+            const rows15_17 = [
+                { row: 15, label: 'Total Glycol, %', data: resultsData.map(r => r.totalGlycolPct), fmt: '#,##0.00', fill: COLORS.GREEN_2 },
+                { row: 16, label: 'MEG, ppm', data: resultsData.map(r => r.megPpm), fmt: '#,##0.00', fill: COLORS.GREEN_3 },
+                { row: 17, label: 'DEG, ppm', data: resultsData.map(r => r.degPpm), fmt: '#,##0.00', fill: COLORS.GREEN_3 }
+            ];
+            
+            rows15_17.forEach(item => {
+                worksheet.getCell(item.row, 2).value = item.label;
+                styleCell(worksheet.getCell(item.row, 2), {
+                    bold: true,
+                    fill: item.fill,
+                    align: 'center',
+                    border: true
+                });
+                
+                item.data.forEach((val, idx) => {
+                    const cell = worksheet.getCell(item.row, 3 + idx);
+                    cell.value = parseFloat(val);
+                    cell.numFmt = item.fmt;
+                    styleCell(cell, { fill: COLORS.WHITE, align: 'center', border: true });
+                });
+            });
+            
+            // ✅ Rows 18-20 (B18:B20) - #A9ECEF background
+            const rows18_20 = [
+                { row: 18, label: 'TEG, ppm', data: resultsData.map(r => r.tegPpm), fmt: '#,##0.00' },
+                { row: 19, label: 'Normalized MEG', data: resultsData.map(r => r.normalizedMEG), fmt: '#,##0.00' },
+                { row: 20, label: 'Normalized DEG', data: resultsData.map(r => r.normalizedDEG), fmt: '#,##0.00' }
+            ];
+            
+            rows18_20.forEach(item => {
+                worksheet.getCell(item.row, 2).value = item.label;
+                styleCell(worksheet.getCell(item.row, 2), {
+                    bold: true,
+                    fill: COLORS.HEADER_CYAN,
+                    align: 'center',
+                    border: true
+                });
+                
+                item.data.forEach((val, idx) => {
+                    const cell = worksheet.getCell(item.row, 3 + idx);
+                    cell.value = parseFloat(val);
+                    cell.numFmt = item.fmt;
+                    styleCell(cell, { fill: COLORS.GRAY_CELL, align: 'center', border: true });
+                });
+            });
+            
+            // ✅ Rows 21-24 (C21:J24) - Bold, blue, underline
+            const rows21_24 = [
+                { row: 21, label: 'Normalized TEG', data: resultsData.map(r => r.normalizedTEG), fmt: '#,##0.00', fill: COLORS.GREEN_4 },
+                { row: 22, label: 'Final MEG, %', data: resultsData.map(r => r.finalMEG), fmt: '#,##0.00', fill: COLORS.GREEN_4 },
+                { row: 23, label: 'Final DEG, %', data: resultsData.map(r => r.finalDEG), fmt: '#,##0.00', fill: COLORS.GREEN_4 },
+                { row: 24, label: 'Final TEG, %', data: resultsData.map(r => r.finalTEG), fmt: '#,##0.00', fill: COLORS.GREEN_4 }
+            ];
+            
+            rows21_24.forEach(item => {
+                worksheet.getCell(item.row, 2).value = item.label;
+                styleCell(worksheet.getCell(item.row, 2), {
+                    bold: true,
+                    fill: item.fill,
+                    align: 'center',
+                    border: true
+                });
                 
                 item.data.forEach((val, idx) => {
                     const cell = worksheet.getCell(item.row, 3 + idx);
                     cell.value = parseFloat(val);
                     cell.numFmt = item.fmt;
                     styleCell(cell, {
-                        fill: item.dataFill || COLORS.GRAY_CELL,
+                        bold: true,
+                        underline: true,
+                        fontColor: COLORS.BLUE,
+                        fill: COLORS.WHITE,
                         align: 'center',
                         border: true
                     });
                 });
             });
             
-            worksheet.mergeCells('B26:J26');
-            worksheet.getCell('B26').value = 'Total Water Content + HC + MEG + DEG + TEG';
-            styleCell(worksheet.getCell('B26'), { fontSize: 11, bold: true, fill: COLORS.CYAN_TOTAL, align: 'center', border: true });
+            // ✅ Row 25 (B25) - Wrapped text with adjusted row height, (C25:J25) - #27CED7 background
+            worksheet.getCell('B25').value = 'Total Water Content + HC + MEG + DEG + TEG';
+            worksheet.getCell('B25').alignment = { wrapText: true, vertical: 'middle', horizontal: 'center' };
+            styleCell(worksheet.getCell('B25'), {
+                bold: true,
+                fill: COLORS.GREEN_4,
+                align: 'center',
+                border: true,
+                wrap: true
+            });
+            worksheet.getRow(25).height = 44;
             
-            col = 3;
-            resultsData.forEach(r => {
-                const cell = worksheet.getCell(27, col);
-                cell.value = parseFloat(r.totalCheck.toFixed(2));
-                cell.numFmt = '0.00';
-                styleCell(cell, { bold: true, fill: COLORS.CYAN_TOTAL, align: 'center', border: true });
-                col++;
+            resultsData.forEach((r, idx) => {
+                const cell = worksheet.getCell(25, 3 + idx);
+                cell.value = parseFloat(r.totalCheck);
+                cell.numFmt = '#,##0.00';
+                styleCell(cell, {
+                    bold: true,
+                    fill: COLORS.CYAN_TOTAL,
+                    align: 'center',
+                    border: true
+                });
             });
             
-            worksheet.mergeCells('B29:J29');
-            worksheet.getCell('B29').value = 'BTX Results';
-            styleCell(worksheet.getCell('B29'), { fontSize: 11, bold: true, fill: COLORS.HEADER_CYAN, align: 'center', border: true });
+            worksheet.mergeCells('B27:J27');
+            worksheet.getCell('B27').value = 'BTX Results';
+            styleCell(worksheet.getCell('B27'), {
+                fontSize: 11,
+                bold: true,
+                fill: COLORS.HEADER_CYAN,
+                align: 'center',
+                border: true
+            });
             
             const btxRows = [
-                { row: 30, label: 'Benzene wt %', value: benzeneWt },
-                { row: 31, label: 'Benzene mol %', value: benzeneMol },
-                { row: 32, label: 'Toluene wt %', value: tolueneWt },
-                { row: 33, label: 'Toluene mol %', value: tolueneMol },
-                { row: 34, label: 'Xylene wt %', value: xyleneWt },
-                { row: 35, label: 'Xylene mol %', value: xyleneMol }
+                { row: 28, label: 'Benzene wt %', value: benzeneWt, fmt: '#,##0.00' },
+                { row: 29, label: 'Benzene mol %', value: benzeneMol, fmt: '0.0' },
+                { row: 30, label: 'Toluene wt %', value: tolueneWt, fmt: '#,##0.00' },
+                { row: 31, label: 'Toluene mol %', value: tolueneMol, fmt: '0.0' },
+                { row: 32, label: 'Xylene wt %', value: xyleneWt, fmt: '#,##0.00' },
+                { row: 33, label: 'Xylene mol %', value: xyleneMol, fmt: '0.0' }
             ];
             
             btxRows.forEach(item => {
                 worksheet.getCell(item.row, 2).value = item.label;
-                styleCell(worksheet.getCell(item.row, 2), { bold: true, fill: COLORS.BTX_BLUE, align: 'center', border: true });
+                styleCell(worksheet.getCell(item.row, 2), {
+                    bold: true,
+                    fill: COLORS.BTX_BLUE,
+                    align: 'center',
+                    border: true
+                });
                 
-                worksheet.getCell(item.row, 3).value = item.value;
-                worksheet.getCell(item.row, 3).numFmt = '0.0';
+                const cell = worksheet.getCell(item.row, 3);
+                cell.value = item.value;
+                cell.numFmt = item.fmt;
                 
-                const isWhiteRow = (item.row === 30 || item.row === 32 || item.row === 34);
-                styleCell(worksheet.getCell(item.row, 3), {
-                    bold: true, fontColor: COLORS.TITLE_BLUE,
+                const isWhiteRow = (item.row === 28 || item.row === 30 || item.row === 32);
+                styleCell(cell, {
+                    bold: true,
+                    fontColor: COLORS.TITLE_BLUE,
                     fill: isWhiteRow ? COLORS.WHITE : COLORS.GRAY_CELL,
-                    align: 'center', border: true
+                    align: 'center',
+                    border: true
                 });
             });
             
-            worksheet.getCell('B37').value = 'Notes,';
-            worksheet.getCell('C37').value = 'Oil is divided by 3 because its response on the GC is overstated by 3 times.';
-            worksheet.getCell('C38').value = 'All glycols are normalized to sum to Total Glycol %.';
+            worksheet.getCell('B35').value = 'Notes,';
+            worksheet.getCell('C35').value = 'Oil is divided by 3 because its response on the GC is overstated by 3 times.';
+            worksheet.getCell('C36').value = 'All glycols are normalized to sum to Total Glycol %.';
             
             const buffer = await workbook.xlsx.writeBuffer();
             const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -625,4 +827,3 @@
     </script>
 </body>
 </html>
-                
