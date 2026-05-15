@@ -1027,8 +1027,38 @@ function normalizeToHundred(components) {
     
     return result;
 }
-     function displayResults() {
+    function displayResults() {
     const container = document.getElementById('resultsTableContainer');
+    
+    // ✅ Build PPM rows dynamically based on dominant glycol
+    let ppmRows = '';
+    
+    if (dominantGlycol !== 'MEG') {
+        ppmRows += `
+            <tr>
+                <td>MEG, ppm</td>
+                ${resultsData.map(r => `<td>${r.megPpm.toFixed(2)}</td>`).join('')}
+            </tr>
+        `;
+    }
+    
+    if (dominantGlycol !== 'DEG') {
+        ppmRows += `
+            <tr>
+                <td>DEG, ppm</td>
+                ${resultsData.map(r => `<td>${r.degPpm.toFixed(2)}</td>`).join('')}
+            </tr>
+        `;
+    }
+    
+    if (dominantGlycol !== 'TEG') {
+        ppmRows += `
+            <tr>
+                <td>TEG, ppm</td>
+                ${resultsData.map(r => `<td>${r.tegPpm.toFixed(2)}</td>`).join('')}
+            </tr>
+        `;
+    }
     
     let tableHTML = `
         <table class="results-table">
@@ -1043,18 +1073,7 @@ function normalizeToHundred(components) {
                     <td><strong>Glycol Results</strong></td>
                     ${resultsData.map(() => `<td></td>`).join('')}
                 </tr>
-                <tr>
-                    <td>MEG, ppm</td>
-                    ${resultsData.map(r => `<td>${r.megPpm.toFixed(2)}</td>`).join('')}
-                </tr>
-                <tr>
-                    <td>DEG, ppm</td>
-                    ${resultsData.map(r => `<td>${r.degPpm.toFixed(2)}</td>`).join('')}
-                </tr>
-                <tr>
-                    <td>TEG, ppm</td>
-                    ${resultsData.map(r => `<td>${r.tegPpm.toFixed(2)}</td>`).join('')}
-                </tr>
+                ${ppmRows}
                 <tr>
                     <td>Water, ppm</td>
                     ${resultsData.map(r => `<td>${r.waterPpm.toFixed(2)}</td>`).join('')}
@@ -1170,6 +1189,7 @@ function normalizeToHundred(components) {
             <strong>📋 Notes:</strong><br>
             • Oil = (Glycol fraction × Condensate) ÷ 3<br>
             • ${dominantGlycol} is calculated by difference: 100 - (other glycols + oil + water)<br>
+            • <strong>${dominantGlycol} ppm is NOT shown</strong> because it's calculated, not measured<br>
             • Green rows = Labware-ready results (rounded to 2 decimal places)<br>
             • ✅ <strong>Rounded values are normalized to exactly 100.00%</strong><br>
             • BTX values are calculated per sample
@@ -1185,8 +1205,7 @@ function normalizeToHundred(components) {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Glycol Results');
     
-    // Print settings - extended to column J
-    worksheet.pageSetup.printArea = 'B1:J44';  // ✅ Extended by 1 row (43→44)
+    // Print settings - dynamic based on content
     worksheet.pageSetup.scale = 80;
     worksheet.pageSetup.fitToPage = true;
     worksheet.pageSetup.fitToWidth = 1;
@@ -1203,11 +1222,6 @@ function normalizeToHundred(components) {
         { width: 12.86 }, { width: 12.86 }, { width: 12.86 }, { width: 12.86 },
         { width: 12.86 }, { width: 12.86 }
     ];
-    
-    // Row heights
-    for (let i = 1; i <= 44; i++) {  // ✅ Extended to row 44
-        if (i !== 2) worksheet.getRow(i).height = 22;
-    }
     
     const COLORS = {
         TITLE_BLUE: 'FF0000FF', HEADER_CYAN: 'FFA9ECEF', GRAY_CELL: 'FFF2F2F2',
@@ -1276,22 +1290,60 @@ function normalizeToHundred(components) {
         styleCell(cell, { bold: true, fill: COLORS.GREEN_2, align: 'center', border: true });
     }
     
+    // Set row heights for all rows
+    for (let i = 1; i <= 50; i++) {
+        if (i !== 2) worksheet.getRow(i).height = 22;
+    }
+    
     // Glycol Results Header
     worksheet.mergeCells('B6:J6');
     worksheet.getCell('B6').value = 'Glycol Results';
     styleCell(worksheet.getCell('B6'), { fontSize: 11, bold: true, fill: COLORS.HEADER_CYAN, align: 'center', border: true });
     
-    // ✅ GROUP 1: PPM DATA (MEG, DEG, TEG, Water) - ROWS 7-10
-    const group1Rows = [
-        { row: 7, label: 'MEG, ppm', data: resultsData.map(r => parseFloat(r.megPpm.toFixed(2))) },
-        { row: 8, label: 'DEG, ppm', data: resultsData.map(r => parseFloat(r.degPpm.toFixed(2))) },
-        { row: 9, label: 'TEG, ppm', data: resultsData.map(r => parseFloat(r.tegPpm.toFixed(2))) },
-        { row: 10, label: 'Water, ppm', data: resultsData.map(r => parseFloat(r.waterPpm.toFixed(2))) }
-    ];
+    // ✅ GROUP 1: PPM DATA (DYNAMIC - EXCLUDE DOMINANT)
+    const group1Rows = [];
+    let currentRow = 7;
     
-    group1Rows.forEach(item => {
+    // Only show non-dominant glycols in ppm section
+    if (dominantGlycol !== 'MEG') {
+        group1Rows.push({ 
+            row: currentRow++, 
+            label: 'MEG, ppm', 
+            data: resultsData.map(r => parseFloat(r.megPpm.toFixed(2))) 
+        });
+    }
+    
+    if (dominantGlycol !== 'DEG') {
+        group1Rows.push({ 
+            row: currentRow++, 
+            label: 'DEG, ppm', 
+            data: resultsData.map(r => parseFloat(r.degPpm.toFixed(2))) 
+        });
+    }
+    
+    if (dominantGlycol !== 'TEG') {
+        group1Rows.push({ 
+            row: currentRow++, 
+            label: 'TEG, ppm', 
+            data: resultsData.map(r => parseFloat(r.tegPpm.toFixed(2))) 
+        });
+    }
+    
+    // Water ppm always shown
+    group1Rows.push({ 
+        row: currentRow++, 
+        label: 'Water, ppm', 
+        data: resultsData.map(r => parseFloat(r.waterPpm.toFixed(2))) 
+    });
+    
+    group1Rows.forEach((item, index) => {
         worksheet.getCell(item.row, 2).value = item.label;
-        styleCell(worksheet.getCell(item.row, 2), { bold: true, fill: COLORS.GREEN_1, align: 'center', border: true });
+        styleCell(worksheet.getCell(item.row, 2), { 
+            bold: true, 
+            fill: COLORS.GREEN_1, 
+            align: 'center', 
+            border: true 
+        });
         
         for (let col = 3; col <= 10; col++) {
             const cell = worksheet.getCell(item.row, col);
@@ -1300,18 +1352,26 @@ function normalizeToHundred(components) {
                 cell.value = item.data[dataIndex];
                 cell.numFmt = '0.00';
             }
-            styleCell(cell, { fill: item.row === 10 ? COLORS.WHITE : COLORS.GRAY_CELL, align: 'center', border: true });
+            const isWaterRow = item.label === 'Water, ppm';
+            styleCell(cell, { 
+                fill: isWaterRow ? COLORS.WHITE : COLORS.GRAY_CELL, 
+                align: 'center', 
+                border: true 
+            });
         }
     });
     
-    // ✅ GROUP 2: PERCENTAGE DATA (MEG%, DEG%, TEG%, Oil%, Water%, Dominant%) - ROWS 11-16
+    // ✅ DYNAMIC ROW TRACKING
+    const group2StartRow = currentRow;
+    
+    // ✅ GROUP 2: PERCENTAGE DATA (DYNAMIC)
     const group2Rows = [
-        { row: 11, label: 'MEG, %', data: resultsData.map(r => parseFloat(r.megPct.toFixed(4))) },
-        { row: 12, label: 'DEG, %', data: resultsData.map(r => parseFloat(r.degPct.toFixed(4))) },
-        { row: 13, label: 'TEG, %', data: resultsData.map(r => parseFloat(r.tegPct.toFixed(4))) },
-        { row: 14, label: 'Oil, %', data: resultsData.map(r => parseFloat(r.oilPercent.toFixed(4))) },
-        { row: 15, label: 'Water, %', data: resultsData.map(r => parseFloat(r.waterPct.toFixed(4))) },
-        { row: 16, label: `${dominantGlycol}%, by difference`, data: resultsData.map(r => {
+        { row: group2StartRow, label: 'MEG, %', data: resultsData.map(r => parseFloat(r.megPct.toFixed(4))) },
+        { row: group2StartRow + 1, label: 'DEG, %', data: resultsData.map(r => parseFloat(r.degPct.toFixed(4))) },
+        { row: group2StartRow + 2, label: 'TEG, %', data: resultsData.map(r => parseFloat(r.tegPct.toFixed(4))) },
+        { row: group2StartRow + 3, label: 'Oil, %', data: resultsData.map(r => parseFloat(r.oilPercent.toFixed(4))) },
+        { row: group2StartRow + 4, label: 'Water, %', data: resultsData.map(r => parseFloat(r.waterPct.toFixed(4))) },
+        { row: group2StartRow + 5, label: `${dominantGlycol}%, by difference`, data: resultsData.map(r => {
             const val = dominantGlycol === 'MEG' ? r.megPct : (dominantGlycol === 'DEG' ? r.degPct : r.tegPct);
             return parseFloat(val.toFixed(4));
         })}
@@ -1332,18 +1392,20 @@ function normalizeToHundred(components) {
         }
     });
     
-    // ✅ GROUP 3: ROUNDED LABWARE DATA - ROWS 17-22 (NORMALIZED TO 100.00%)
-const group3Rows = [
-    { row: 17, label: `${dominantGlycol}%, by difference Round`, data: resultsData.map(r => {
-        const val = dominantGlycol === 'MEG' ? r.megPctRound : (dominantGlycol === 'DEG' ? r.degPctRound : r.tegPctRound);
-        return parseFloat(val.toFixed(2));
-    })},
-    { row: 18, label: 'MEG, % Round', data: resultsData.map(r => parseFloat(r.megPctRound.toFixed(2))) },
-    { row: 19, label: 'DEG, % Round', data: resultsData.map(r => parseFloat(r.degPctRound.toFixed(2))) },
-    { row: 20, label: 'TEG, % Round', data: resultsData.map(r => parseFloat(r.tegPctRound.toFixed(2))) },
-    { row: 21, label: 'Oil, % Round', data: resultsData.map(r => parseFloat(r.oilPercentRound.toFixed(2))) },
-    { row: 22, label: 'Water, % Round', data: resultsData.map(r => parseFloat(r.waterPctRound.toFixed(2))) }
-];
+    const group3StartRow = group2StartRow + 6;
+    
+    // ✅ GROUP 3: ROUNDED LABWARE DATA (DYNAMIC, NORMALIZED)
+    const group3Rows = [
+        { row: group3StartRow, label: `${dominantGlycol}%, by difference Round`, data: resultsData.map(r => {
+            const val = dominantGlycol === 'MEG' ? r.megPctRound : (dominantGlycol === 'DEG' ? r.degPctRound : r.tegPctRound);
+            return parseFloat(val.toFixed(2));
+        })},
+        { row: group3StartRow + 1, label: 'MEG, % Round', data: resultsData.map(r => parseFloat(r.megPctRound.toFixed(2))) },
+        { row: group3StartRow + 2, label: 'DEG, % Round', data: resultsData.map(r => parseFloat(r.degPctRound.toFixed(2))) },
+        { row: group3StartRow + 3, label: 'TEG, % Round', data: resultsData.map(r => parseFloat(r.tegPctRound.toFixed(2))) },
+        { row: group3StartRow + 4, label: 'Oil, % Round', data: resultsData.map(r => parseFloat(r.oilPercentRound.toFixed(2))) },
+        { row: group3StartRow + 5, label: 'Water, % Round', data: resultsData.map(r => parseFloat(r.waterPctRound.toFixed(2))) }
+    ];
     
     group3Rows.forEach(item => {
         worksheet.getCell(item.row, 2).value = item.label;
@@ -1360,14 +1422,16 @@ const group3Rows = [
         }
     });
     
-    // ✅ GROUP 4: CALCULATION DATA - ROWS 23-28
+    const group4StartRow = group3StartRow + 6;
+    
+    // ✅ GROUP 4: CALCULATION DATA (DYNAMIC)
     const group4Rows = [
-        { row: 23, label: 'Glycol from GC', data: resultsData.map(r => parseFloat(r.glycolGc.toFixed(2))) },
-        { row: 24, label: 'Condensate', data: resultsData.map(r => parseFloat(r.condensate.toFixed(2))) },
-        { row: 25, label: 'Glycol fraction in sample', data: resultsData.map(r => parseFloat(r.glycolFraction.toFixed(4))) },
-        { row: 26, label: '% glycol in sample', data: resultsData.map(r => parseFloat(r.glycolInSample.toFixed(4))) },
-        { row: 27, label: '% oil', data: resultsData.map(r => parseFloat(r.oilPercent.toFixed(4))) },
-        { row: 28, label: '% oil/3 in sample', data: resultsData.map(r => parseFloat(r.oilPercent.toFixed(4))) }
+        { row: group4StartRow, label: 'Glycol from GC', data: resultsData.map(r => parseFloat(r.glycolGc.toFixed(2))) },
+        { row: group4StartRow + 1, label: 'Condensate', data: resultsData.map(r => parseFloat(r.condensate.toFixed(2))) },
+        { row: group4StartRow + 2, label: 'Glycol fraction in sample', data: resultsData.map(r => parseFloat(r.glycolFraction.toFixed(4))) },
+        { row: group4StartRow + 3, label: '% glycol in sample', data: resultsData.map(r => parseFloat(r.glycolInSample.toFixed(4))) },
+        { row: group4StartRow + 4, label: '% oil', data: resultsData.map(r => parseFloat(r.oilPercent.toFixed(4))) },
+        { row: group4StartRow + 5, label: '% oil/3 in sample', data: resultsData.map(r => parseFloat(r.oilPercent.toFixed(4))) }
     ];
     
     group4Rows.forEach(item => {
@@ -1381,23 +1445,28 @@ const group3Rows = [
                 cell.value = item.data[dataIndex];
                 cell.numFmt = item.data[dataIndex] < 1 ? '0.0000' : '0.00';
             }
-            styleCell(cell, { fill: (item.row === 23 || item.row === 24) ? COLORS.WHITE : COLORS.GRAY_CELL, align: 'center', border: true });
+            const isWhiteRow = (item.row === group4StartRow || item.row === group4StartRow + 1);
+            styleCell(cell, { fill: isWhiteRow ? COLORS.WHITE : COLORS.GRAY_CELL, align: 'center', border: true });
         }
     });
     
-    // ✅ BTX Section Header - ROW 30
-    worksheet.mergeCells('B30:J30');
-    worksheet.getCell('B30').value = 'BTX Results';
-    styleCell(worksheet.getCell('B30'), { fontSize: 11, bold: true, fill: COLORS.HEADER_CYAN, align: 'center', border: true });
+    const btxHeaderRow = group4StartRow + 7;
     
-    // ✅ BTX Data Rows - ROWS 31-36
+    // ✅ BTX Section Header (DYNAMIC)
+    worksheet.mergeCells(`B${btxHeaderRow}:J${btxHeaderRow}`);
+    worksheet.getCell(`B${btxHeaderRow}`).value = 'BTX Results';
+    styleCell(worksheet.getCell(`B${btxHeaderRow}`), { fontSize: 11, bold: true, fill: COLORS.HEADER_CYAN, align: 'center', border: true });
+    
+    const btxStartRow = btxHeaderRow + 1;
+    
+    // ✅ BTX Data Rows (DYNAMIC)
     const btxRows = [
-        { row: 31, label: 'Benzene wt %', field: 'benzeneWt', fmt: '0.00', isWhite: true },
-        { row: 32, label: 'Benzene mol %', field: 'benzeneMol', fmt: '0.0', isWhite: false },
-        { row: 33, label: 'Toluene wt %', field: 'tolueneWt', fmt: '0.00', isWhite: true },
-        { row: 34, label: 'Toluene mol %', field: 'tolueneMol', fmt: '0.0', isWhite: false },
-        { row: 35, label: 'Xylene wt %', field: 'xyleneWt', fmt: '0.00', isWhite: true },
-        { row: 36, label: 'Xylene mol %', field: 'xyleneMol', fmt: '0.0', isWhite: false }
+        { row: btxStartRow, label: 'Benzene wt %', field: 'benzeneWt', fmt: '0.00', isWhite: true },
+        { row: btxStartRow + 1, label: 'Benzene mol %', field: 'benzeneMol', fmt: '0.0', isWhite: false },
+        { row: btxStartRow + 2, label: 'Toluene wt %', field: 'tolueneWt', fmt: '0.00', isWhite: true },
+        { row: btxStartRow + 3, label: 'Toluene mol %', field: 'tolueneMol', fmt: '0.0', isWhite: false },
+        { row: btxStartRow + 4, label: 'Xylene wt %', field: 'xyleneWt', fmt: '0.00', isWhite: true },
+        { row: btxStartRow + 5, label: 'Xylene mol %', field: 'xyleneMol', fmt: '0.0', isWhite: false }
     ];
     
     btxRows.forEach(item => {
@@ -1415,13 +1484,19 @@ const group3Rows = [
         }
     });
     
-    // ✅ Notes - ROWS 38-40
-    worksheet.getCell('B38').value = 'Blue = results to enter into Labware';
-    worksheet.getCell('B39').value = 'Notes,';
-    worksheet.getCell('C39').value = 'Oil = (Glycol fraction × Condensate) ÷ 3';
+    const notesStartRow = btxStartRow + 7;
+    
+    // ✅ Notes (DYNAMIC)
+    worksheet.getCell(`B${notesStartRow}`).value = 'Blue = results to enter into Labware';
+    worksheet.getCell(`B${notesStartRow + 1}`).value = 'Notes,';
+    worksheet.getCell(`C${notesStartRow + 1}`).value = 'Oil = (Glycol fraction × Condensate) ÷ 3';
     
     const otherGlycols = dominantGlycol === 'MEG' ? 'DEG,TEG' : (dominantGlycol === 'DEG' ? 'MEG,TEG' : 'MEG,DEG');
-    worksheet.getCell('C40').value = `${dominantGlycol} is calculated from the difference 100 minus the sum of the oil, water, ${otherGlycols}`;
+    worksheet.getCell(`C${notesStartRow + 2}`).value = `${dominantGlycol} is calculated from the difference 100 minus the sum of the oil, water, ${otherGlycols}`;
+    
+    // ✅ Set print area dynamically
+    const lastRow = notesStartRow + 2;
+    worksheet.pageSetup.printArea = `B1:J${lastRow}`;
     
     // Export
     const buffer = await workbook.xlsx.writeBuffer();
@@ -1433,7 +1508,7 @@ const group3Rows = [
     a.click();
     window.URL.revokeObjectURL(url);
     
-    alert(`✅ Excel exported successfully!\n📄 ${projectNumber}_Glycol_Analysis.xlsx\n\n✅ MEG ppm row included\n✅ BTX per sample\n✅ Extended to column J\n✅ Normal margins`);
+    alert(`✅ Excel exported successfully!\n📄 ${projectNumber}_Glycol_Analysis.xlsx\n\n✅ Dominant glycol ppm excluded\n✅ Normalized rounded values (sum = 100.00%)\n✅ Dynamic row positioning\n✅ BTX per sample`);
 }
     </script>
 </body>
