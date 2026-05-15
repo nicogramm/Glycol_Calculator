@@ -909,69 +909,125 @@
         }
         
         function calculateAll() {
-            resultsData = [];
-            const projectNumber = document.getElementById('projectNumber').value || 'N/A';
-            
-            for (let i = 1; i <= sampleCount; i++) {
-                const sampleName = document.getElementById(`sampleName${i}`).value;
-                
-                const degPpm = parseFloat(document.getElementById(`deg${i}`).value) || 0;
-                const tegPpm = parseFloat(document.getElementById(`teg${i}`).value) || 0;
-                const megPpm = parseFloat(document.getElementById(`meg${i}`).value) || 0;
-                const waterPpm = parseFloat(document.getElementById(`water${i}`).value) || 0;
-                const glycolGc = parseFloat(document.getElementById(`glycolGc${i}`).value) || 100;
-                const condensate = parseFloat(document.getElementById(`condensate${i}`).value) || 0;
-                
-                const degPct = degPpm / 10000;
-                const tegPct = tegPpm / 10000;
-                const megPct = megPpm / 10000;
-                const waterPct = waterPpm / 10000;
-                
-                const glycolFraction = (100 - waterPct) / 100;
-                const oilPercent = (glycolFraction * condensate) / 3;
-                
-                document.getElementById(`oil${i}`).value = oilPercent.toFixed(4);
-                
-                let megFinal, degFinal, tegFinal;
-                
-                if (dominantGlycol === 'MEG') {
-                    degFinal = degPct;
-                    tegFinal = tegPct;
-                    megFinal = 100 - (degPct + tegPct + oilPercent + waterPct);
-                } else if (dominantGlycol === 'DEG') {
-                    megFinal = megPct;
-                    tegFinal = tegPct;
-                    degFinal = 100 - (megPct + tegPct + oilPercent + waterPct);
-                } else {
-                    megFinal = megPct;
-                    degFinal = degPct;
-                    tegFinal = 100 - (megPct + degPct + oilPercent + waterPct);
-                }
-                
-                const glycolInSample = 100 - waterPct;
-                
-                const benzeneWt = parseFloat(document.getElementById(`benzeneWt${i}`).value) || 0;
-                const tolueneWt = parseFloat(document.getElementById(`tolueneWt${i}`).value) || 0;
-                const xyleneWt = parseFloat(document.getElementById(`xyleneWt${i}`).value) || 0;
-                
-                const benzeneMol = Math.round((benzeneWt / 78.114) * 10) / 10;
-                const tolueneMol = Math.round((tolueneWt / 92.141) * 10) / 10;
-                const xyleneMol = Math.round((xyleneWt / 106.17) * 10) / 10;
-                
-                resultsData.push({
-                    sampleName, degPpm, tegPpm, megPpm, waterPpm, oilPercent,
-                    glycolGc, condensate, degPct: degFinal, tegPct: tegFinal,
-                    megPct: megFinal, waterPct, glycolFraction, glycolInSample,
-                    benzeneWt, benzeneMol, tolueneWt, tolueneMol, xyleneWt, xyleneMol
-                });
-            }
-            
-            displayResults();
-            document.getElementById('resultsSection').classList.remove('hidden');
-            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+    resultsData = [];
+    const projectNumber = document.getElementById('projectNumber').value || 'N/A';
+    
+    for (let i = 1; i <= sampleCount; i++) {
+        const sampleName = document.getElementById(`sampleName${i}`).value;
+        
+        const degPpm = parseFloat(document.getElementById(`deg${i}`).value) || 0;
+        const tegPpm = parseFloat(document.getElementById(`teg${i}`).value) || 0;
+        const megPpm = parseFloat(document.getElementById(`meg${i}`).value) || 0;
+        const waterPpm = parseFloat(document.getElementById(`water${i}`).value) || 0;
+        const glycolGc = parseFloat(document.getElementById(`glycolGc${i}`).value) || 100;
+        const condensate = parseFloat(document.getElementById(`condensate${i}`).value) || 0;
+        
+        const degPct = degPpm / 10000;
+        const tegPct = tegPpm / 10000;
+        const megPct = megPpm / 10000;
+        const waterPct = waterPpm / 10000;
+        
+        const glycolFraction = (100 - waterPct) / 100;
+        const oilPercent = (glycolFraction * condensate) / 3;
+        
+        document.getElementById(`oil${i}`).value = oilPercent.toFixed(4);
+        
+        let megFinal, degFinal, tegFinal;
+        
+        if (dominantGlycol === 'MEG') {
+            degFinal = degPct;
+            tegFinal = tegPct;
+            megFinal = 100 - (degPct + tegPct + oilPercent + waterPct);
+        } else if (dominantGlycol === 'DEG') {
+            megFinal = megPct;
+            tegFinal = tegPct;
+            degFinal = 100 - (megPct + tegPct + oilPercent + waterPct);
+        } else {
+            megFinal = megPct;
+            degFinal = degPct;
+            tegFinal = 100 - (megPct + degPct + oilPercent + waterPct);
         }
         
-        function displayResults() {
+        const glycolInSample = 100 - waterPct;
+        
+        const benzeneWt = parseFloat(document.getElementById(`benzeneWt${i}`).value) || 0;
+        const tolueneWt = parseFloat(document.getElementById(`tolueneWt${i}`).value) || 0;
+        const xyleneWt = parseFloat(document.getElementById(`xyleneWt${i}`).value) || 0;
+        
+        const benzeneMol = Math.round((benzeneWt / 78.114) * 10) / 10;
+        const tolueneMol = Math.round((tolueneWt / 92.141) * 10) / 10;
+        const xyleneMol = Math.round((xyleneWt / 106.17) * 10) / 10;
+        
+        // ✅ NORMALIZATION: Round values to exactly 100.00%
+        const components = [
+            { name: 'MEG', value: megFinal },
+            { name: 'DEG', value: degFinal },
+            { name: 'TEG', value: tegFinal },
+            { name: 'Oil', value: oilPercent },
+            { name: 'Water', value: waterPct }
+        ];
+        
+        const normalized = normalizeToHundred(components);
+        
+        resultsData.push({
+            sampleName, degPpm, tegPpm, megPpm, waterPpm, oilPercent,
+            glycolGc, condensate, 
+            degPct: degFinal, 
+            tegPct: tegFinal,
+            megPct: megFinal, 
+            waterPct, 
+            glycolFraction, 
+            glycolInSample,
+            // ✅ Add normalized rounded values
+            megPctRound: normalized.MEG,
+            degPctRound: normalized.DEG,
+            tegPctRound: normalized.TEG,
+            oilPercentRound: normalized.Oil,
+            waterPctRound: normalized.Water,
+            benzeneWt, benzeneMol, tolueneWt, tolueneMol, xyleneWt, xyleneMol
+        });
+    }
+    
+    displayResults();
+    document.getElementById('resultsSection').classList.remove('hidden');
+    document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ✅ NEW FUNCTION: Normalize rounded values to exactly 100.00%
+function normalizeToHundred(components) {
+    // Step 1: Round all values to 2 decimals
+    const rounded = components.map(c => ({
+        name: c.name,
+        original: c.value,
+        rounded: Math.round(c.value * 100) / 100,
+        remainder: c.value - Math.round(c.value * 100) / 100
+    }));
+    
+    // Step 2: Calculate sum
+    let sum = rounded.reduce((acc, c) => acc + c.rounded, 0);
+    sum = Math.round(sum * 100) / 100;
+    
+    // Step 3: Calculate difference from 100.00
+    let diff = Math.round((100.00 - sum) * 100) / 100;
+    
+    // Step 4: Adjust largest component to make exactly 100.00
+    if (diff !== 0) {
+        // Sort by original value (largest first)
+        rounded.sort((a, b) => b.original - a.original);
+        
+        // Add difference to largest component
+        rounded[0].rounded = Math.round((rounded[0].rounded + diff) * 100) / 100;
+    }
+    
+    // Step 5: Return as object
+    const result = {};
+    rounded.forEach(c => {
+        result[c.name] = c.rounded;
+    });
+    
+    return result;
+}
+     function displayResults() {
     const container = document.getElementById('resultsTableContainer');
     
     let tableHTML = `
@@ -1033,29 +1089,36 @@
                 <tr class="labware-ready">
                     <td><strong>${dominantGlycol}%, by difference Round</strong></td>
                     ${resultsData.map(r => {
-                        const val = dominantGlycol === 'MEG' ? r.megPct : (dominantGlycol === 'DEG' ? r.degPct : r.tegPct);
+                        const val = dominantGlycol === 'MEG' ? r.megPctRound : (dominantGlycol === 'DEG' ? r.degPctRound : r.tegPctRound);
                         return `<td><strong>${val.toFixed(2)}</strong></td>`;
                     }).join('')}
                 </tr>
                 <tr class="labware-ready">
                     <td>MEG, % Round</td>
-                    ${resultsData.map(r => `<td>${r.megPct.toFixed(2)}</td>`).join('')}
+                    ${resultsData.map(r => `<td>${r.megPctRound.toFixed(2)}</td>`).join('')}
                 </tr>
                 <tr class="labware-ready">
                     <td>DEG, % Round</td>
-                    ${resultsData.map(r => `<td>${r.degPct.toFixed(2)}</td>`).join('')}
+                    ${resultsData.map(r => `<td>${r.degPctRound.toFixed(2)}</td>`).join('')}
                 </tr>
                 <tr class="labware-ready">
                     <td>TEG, % Round</td>
-                    ${resultsData.map(r => `<td>${r.tegPct.toFixed(2)}</td>`).join('')}
+                    ${resultsData.map(r => `<td>${r.tegPctRound.toFixed(2)}</td>`).join('')}
                 </tr>
                 <tr class="labware-ready">
                     <td>Oil, % Round</td>
-                    ${resultsData.map(r => `<td>${r.oilPercent.toFixed(2)}</td>`).join('')}
+                    ${resultsData.map(r => `<td>${r.oilPercentRound.toFixed(2)}</td>`).join('')}
                 </tr>
                 <tr class="labware-ready">
                     <td>Water, % Round</td>
-                    ${resultsData.map(r => `<td>${r.waterPct.toFixed(2)}</td>`).join('')}
+                    ${resultsData.map(r => `<td>${r.waterPctRound.toFixed(2)}</td>`).join('')}
+                </tr>
+                <tr class="labware-ready" style="background: #fff3cd; font-weight: bold;">
+                    <td>✓ TOTAL (should be 100.00%)</td>
+                    ${resultsData.map(r => {
+                        const total = r.megPctRound + r.degPctRound + r.tegPctRound + r.oilPercentRound + r.waterPctRound;
+                        return `<td>${total.toFixed(2)}</td>`;
+                    }).join('')}
                 </tr>
                 <tr>
                     <td>Glycol from GC</td>
@@ -1108,6 +1171,7 @@
             • Oil = (Glycol fraction × Condensate) ÷ 3<br>
             • ${dominantGlycol} is calculated by difference: 100 - (other glycols + oil + water)<br>
             • Green rows = Labware-ready results (rounded to 2 decimal places)<br>
+            • ✅ <strong>Rounded values are normalized to exactly 100.00%</strong><br>
             • BTX values are calculated per sample
         </div>
     `;
@@ -1268,18 +1332,18 @@
         }
     });
     
-    // ✅ GROUP 3: ROUNDED LABWARE DATA - ROWS 17-21
-    const group3Rows = [
-        { row: 17, label: `${dominantGlycol}%, by difference Round`, data: resultsData.map(r => {
-            const val = dominantGlycol === 'MEG' ? r.megPct : (dominantGlycol === 'DEG' ? r.degPct : r.tegPct);
-            return parseFloat(val.toFixed(2));
-        })},
-        { row: 18, label: 'MEG, % Round', data: resultsData.map(r => parseFloat(r.megPct.toFixed(2))) },
-        { row: 19, label: 'DEG, % Round', data: resultsData.map(r => parseFloat(r.degPct.toFixed(2))) },
-        { row: 20, label: 'TEG, % Round', data: resultsData.map(r => parseFloat(r.tegPct.toFixed(2))) },
-        { row: 21, label: 'Oil, % Round', data: resultsData.map(r => parseFloat(r.oilPercent.toFixed(2))) },
-        { row: 22, label: 'Water, % Round', data: resultsData.map(r => parseFloat(r.waterPct.toFixed(2))) }
-    ];
+    // ✅ GROUP 3: ROUNDED LABWARE DATA - ROWS 17-22 (NORMALIZED TO 100.00%)
+const group3Rows = [
+    { row: 17, label: `${dominantGlycol}%, by difference Round`, data: resultsData.map(r => {
+        const val = dominantGlycol === 'MEG' ? r.megPctRound : (dominantGlycol === 'DEG' ? r.degPctRound : r.tegPctRound);
+        return parseFloat(val.toFixed(2));
+    })},
+    { row: 18, label: 'MEG, % Round', data: resultsData.map(r => parseFloat(r.megPctRound.toFixed(2))) },
+    { row: 19, label: 'DEG, % Round', data: resultsData.map(r => parseFloat(r.degPctRound.toFixed(2))) },
+    { row: 20, label: 'TEG, % Round', data: resultsData.map(r => parseFloat(r.tegPctRound.toFixed(2))) },
+    { row: 21, label: 'Oil, % Round', data: resultsData.map(r => parseFloat(r.oilPercentRound.toFixed(2))) },
+    { row: 22, label: 'Water, % Round', data: resultsData.map(r => parseFloat(r.waterPctRound.toFixed(2))) }
+];
     
     group3Rows.forEach(item => {
         worksheet.getCell(item.row, 2).value = item.label;
