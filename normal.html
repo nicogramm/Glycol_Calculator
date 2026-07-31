@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Glycol Calculator - Normalization Method</title>
     <script src="https://cdn.jsdelivr.net/npm/exceljs@4/dist/exceljs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; min-height: 100vh; }
@@ -59,6 +60,35 @@
         .remove-sample-btn { padding: 12px 25px; background: #f44336; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
         .remove-sample-btn:hover { background: #d32f2f; }
         .sample-controls { display: flex; gap: 10px; margin-bottom: 20px; }
+
+        .pdf-drop-zone {
+            border: 3px dashed #667eea;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f5f7ff;
+            margin-bottom: 20px;
+        }
+        .pdf-drop-zone.dragover {
+            background: #e3e8ff;
+            border-color: #4caf50;
+            transform: scale(1.01);
+        }
+        .pdf-drop-icon { font-size: 40px; margin-bottom: 10px; }
+        .pdf-parse-log { margin-top: 15px; max-height: 250px; overflow-y: auto; }
+        .pdf-parse-item {
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .pdf-parse-success { background: #e8f5e9; border-left: 4px solid #4caf50; color: #2e7d32; }
+        .pdf-parse-error { background: #ffebee; border-left: 4px solid #f44336; color: #c62828; }
+        .pdf-parse-info { background: #e3f2fd; border-left: 4px solid #2196f3; color: #1565c0; }
+
     </style>
 </head>
 <body>
@@ -96,6 +126,23 @@
                     <span style="padding: 12px; color: #666;">Total Samples: <strong id="sampleCount">2</strong></span>
                 </div>
             </div>
+
+
+            <!-- PDF AUTO-FILL DROP ZONE -->
+       <div class="section">
+            <div class="section-title">📄 Auto-Fill from GC PDF Report</div>
+            <div id="pdfDropZone" class="pdf-drop-zone">
+                <div class="pdf-drop-icon">📄⬇️</div>
+                <p><strong>Drag & drop PDF report(s) here</strong></p>
+                <p style="font-size: 12px; color: #888; margin-top: 5px;">
+                    or click to browse — you can drop multiple files (1 PDF = 1 Sample)
+                </p>
+                <input type="file" id="pdfFileInput" accept=".pdf" multiple hidden onchange="handlePdfFiles(this.files)">
+            </div>
+            <div id="pdfParseLog" class="pdf-parse-log"></div>
+        </div>
+
+
             <div class="section">
                 <div class="section-title">📥 Input Data</div>
                 <div class="samples-container" id="samplesContainer"></div>
@@ -129,6 +176,282 @@
     <script>
         let sampleCount = 2;
         let resultsData = [];
+
+
+                // ============ PDF.js SETUP ============
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        // ============ DROP ZONE EVENTS ============
+        document.addEventListener('DOMContentLoaded', () => {
+            const dropZone = document.getElementById('pdfDropZone');
+            if (!dropZone) return;
+
+            dropZone.addEventListener('click', () => document.getElementById('pdfFileInput').click());
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+
+            dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                handlePdfFiles(e.dataTransfer.files);
+            });
+        });
+
+        // ✅ NEW: Flat text extraction (no line breaks) — more robust for 
+        // extracting single key-value metadata fields like "Sample name:",
+        // since it doesn't depend on our Y-coordinate line-grouping heuristic,
+        // which can get confused by multi-column layouts (e.g. the 3 side-by-side
+        // Compound calibration blocks at the top of this report).
+        async function extractPdfTextFlat(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            let flatText = '';
+
+            for (let p = 1; p <= pdf.numPages; p++) {
+                const page = await pdf.getPage(p);
+                const textContent = await page.getTextContent();
+                flatText += textContent.items.map(item => item.str).join(' ') + ' ';
+            }
+
+            return flatText;
+        }
+
+        // ============ EXTRACT TEXT (preserving line structure) ============
+        async function extractPdfTextWithLines(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            let fullText = '';
+
+            for (let p = 1; p <= pdf.numPages; p++) {
+                const page = await pdf.getPage(p);
+                const textContent = await page.getTextContent();
+
+                let lastY = null;
+                let line = '';
+
+                textContent.items.forEach(item => {
+                    const y = item.transform[5];
+                    if (lastY !== null && Math.abs(y - lastY) > 2) {
+                        fullText += line.trim() + '\n';
+                        line = '';
+                    }
+                    line += item.str + ' ';
+                    lastY = y;
+                });
+                fullText += line.trim() + '\n';
+            }
+
+            return fullText;
+        }
+
+        // ============ PARSE GLYCOL DATA ============
+    function parseGlycolPdf(linedText, flatText) {
+    const result = { meg: null, deg: null, teg: null, sampleName: null, projectNumber: null, sampleNumber: null };
+
+    // Row data (MEG/DEG/TEG amounts) needs LINE structure — uses linedText
+    const rowRegex = /^(MEG|DEG|TEG)\s+[\d.]+\s+[\d,.]+\s+[\d,.]+\s+[\d.]+\s+([\d,]+\.?\d*)\s*$/gim;
+    let match;
+    while ((match = rowRegex.exec(linedText)) !== null) {
+        const compound = match[1].toUpperCase();
+        const amount = parseFloat(match[2].replace(/,/g, ''));
+        if (compound === 'MEG') result.meg = amount;
+        if (compound === 'DEG') result.deg = amount;
+        if (compound === 'TEG') result.teg = amount;
+    }
+
+    // Sample name: try lined text first, then fall back to flat text
+    let sampleNameMatch = linedText.match(/Sample name:\s*(\S+)/i);
+    if (!sampleNameMatch) {
+        sampleNameMatch = flatText.match(/Sample name:\s*(\S+)/i);
+    }
+
+    if (sampleNameMatch) {
+        result.sampleName = sampleNameMatch[1].trim();
+
+        // ✅ FIX: Normalize all Unicode dash variants to a standard ASCII hyphen "-".
+        // SSRS/RDL-generated PDF reports (like this one — see "SAMPSUM_REPORT.rdl")
+        // commonly use a NON-BREAKING HYPHEN (U+2011) instead of a regular hyphen
+        // in identifier codes, specifically to prevent the code from line-wrapping
+        // in the rendered report. Visually identical to "-", but a literal "-" in
+        // our regex won't match it, causing the split below to silently fail.
+        // This covers: hyphen (U+2010), non-breaking hyphen (U+2011), figure dash
+        // (U+2012), en dash (U+2013), em dash (U+2014), horizontal bar (U+2015),
+        // and minus sign (U+2212).
+        const normalizedName = result.sampleName.replace(/[\u2010-\u2015\u2212]/g, '-');
+
+        // Split at the LAST "-NNN" segment (sample sequence number)
+        // Example: AUBNE-26-00047-001_L_R
+        //          └── Project Number ──┘ └Seq┘ └suffix┘
+        const splitMatch = normalizedName.match(/^(.+)-(\d{3})(?:_.*)?$/);
+        if (splitMatch) {
+            result.projectNumber = splitMatch[1];
+            result.sampleNumber = parseInt(splitMatch[2], 10);
+        }
+    }
+
+    return result;
+}
+
+
+        // ============ AUTO-FILL SAMPLE FIELDS ============
+        function autofillSample(sampleIndex, data) {
+            const megField = document.getElementById(`meg${sampleIndex}`);
+            if (megField && !megField.disabled && data.meg !== null) {
+                megField.value = data.meg.toFixed(2);
+            }
+
+            const degField = document.getElementById(`deg${sampleIndex}`);
+            if (degField && !degField.disabled && data.deg !== null) {
+                degField.value = data.deg.toFixed(2);
+            }
+
+            const tegField = document.getElementById(`teg${sampleIndex}`);
+            if (tegField && !tegField.disabled && data.teg !== null) {
+                tegField.value = data.teg.toFixed(2);
+            }
+
+            if (data.sampleName) {
+                const nameField = document.getElementById(`sampleName${sampleIndex}`);
+                if (nameField) nameField.value = data.sampleName;
+            }
+
+            if (data.projectNumber) {
+                const projField = document.getElementById('projectNumber');
+                if (projField && !projField.value) projField.value = data.projectNumber;
+            }
+        }
+
+        // ============ MAIN HANDLER ============
+        let pdfParsedResults = []; // temporary storage — para pwede pang i-reassign manually
+
+    async function handlePdfFiles(fileList) {
+        const files = Array.from(fileList).filter(f =>
+            f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf')
+        );
+        const logContainer = document.getElementById('pdfParseLog');
+
+         if (files.length === 0) {
+        logContainer.innerHTML = `<div class="pdf-parse-item pdf-parse-error">⚠️ No valid PDF file was dropped.</div>`;
+        return;
+    }
+
+        pdfParsedResults = [];
+        logContainer.innerHTML = `<div class="pdf-parse-item pdf-parse-info">⏳ Processing ${files.length} PDF(s)...</div>`;
+
+        let logHTML = '';
+
+        for (let idx = 0; idx < files.length; idx++) {
+            const file = files[idx];
+
+                try {
+                    const linedText = await extractPdfTextWithLines(file);
+                    const flatText = await extractPdfTextFlat(file);
+                    const data = parseGlycolPdf(linedText, flatText);
+
+                    
+
+                if (data.meg === null && data.deg === null && data.teg === null) {
+                    logHTML += `<div class="pdf-parse-item pdf-parse-error">
+                        ❌ <strong>${file.name}</strong>: Walang MEG/DEG/TEG values na na-detect.
+                    </div>`;
+                    continue;
+                }
+
+                // ✅ Determine target sample: priority = detected number mula sa sample name
+                // Fallback = upload order (idx + 1)
+                const autoDetected = data.sampleNumber !== null;
+                const targetSample = data.sampleNumber || (idx + 1);
+
+                // Auto-add sample slots kung kulang
+                while (sampleCount < targetSample) {
+                    addSample();
+                }
+
+                pdfParsedResults.push({ fileName: file.name, data, targetSample });
+                autofillSample(targetSample, data);
+
+                const resultIndex = pdfParsedResults.length - 1;
+
+             logHTML += `<div class="pdf-parse-item pdf-parse-success">
+                ✅ <strong>${file.name}</strong> → 
+                <strong>Sample ${targetSample}</strong> 
+                ${autoDetected 
+                    ? '<span style="color:#2e7d32;">(✓ auto-detected from Sample Name)</span>' 
+                    : '<span style="color:#f57f17;">(⚠️ based on upload order — no sequence number detected)</span>'
+                }<br>
+                MEG: ${data.meg ?? 'N/A'} | DEG: ${data.deg ?? 'N/A'} | TEG: ${data.teg ?? 'N/A'} ppm
+                ${data.sampleName ? `<br>Sample ID: <strong>${data.sampleName}</strong>` : ''}
+                <br><em>⚠️ Water (ppm) still requires manual input.</em>
+                <br>
+                <label style="font-size:12px; margin-top:6px; display:inline-block;">
+                    🔧 Wrong assignment? Reassign to:
+                    <select id="reassignSelect${resultIndex}" 
+                            data-result-index="${resultIndex}"
+                            onchange="reassignSample(${resultIndex}, this.value)" 
+                            style="padding:4px; margin-left:5px;">
+                        ${buildSampleOptionsHTML(targetSample)}
+                    </select>
+                </label>
+            </div>`;
+            } catch (err) {
+                logHTML += `<div class="pdf-parse-item pdf-parse-error">
+                    ❌ <strong>${file.name}</strong>: Error - ${err.message}
+                </div>`;
+            }
+        }
+
+        logContainer.innerHTML = logHTML;
+    }
+
+            // ✅ Helper: gumawa ng <option> list batay sa CURRENT sampleCount
+        function buildSampleOptionsHTML(selectedValue) {
+            return Array.from({length: sampleCount}, (_, i) => i + 1)
+                .map(n => `<option value="${n}" ${n === selectedValue ? 'selected' : ''}>Sample ${n}</option>`)
+                .join('');
+        }
+
+        // ✅ I-refresh ang LAHAT ng reassign dropdowns na kasalukuyang nasa log
+        function refreshReassignDropdowns() {
+            pdfParsedResults.forEach((result, resultIndex) => {
+                const select = document.getElementById(`reassignSelect${resultIndex}`);
+                if (!select) return; // wala nang log entry (baka na-clear na)
+
+                // Panatilihin ang kasalukuyang napiling value, kung valid pa
+                let currentValue = parseInt(select.value, 10);
+                if (currentValue > sampleCount) {
+                    currentValue = sampleCount; // ✅ clamp kung na-remove ang sample nito
+                }
+
+                select.innerHTML = buildSampleOptionsHTML(currentValue);
+
+                // Kung na-clamp, i-reflect din sa actual data
+                if (currentValue !== result.targetSample && currentValue === sampleCount) {
+                    result.targetSample = currentValue;
+                }
+            });
+        }
+
+    // ✅ Manual reassignment kung mali ang auto-detect
+// ✅ Manual reassignment if auto-detect was wrong
+    function reassignSample(resultIndex, newSampleNumber) {
+        newSampleNumber = parseInt(newSampleNumber, 10);
+        const result = pdfParsedResults[resultIndex];
+        if (!result) return;
+
+        while (sampleCount < newSampleNumber) {
+            addSample();
+        }
+
+        autofillSample(newSampleNumber, result.data);
+        result.targetSample = newSampleNumber;
+
+        alert(`✅ "${result.fileName}" has been reassigned to Sample ${newSampleNumber}.`);
+    }
         
         window.onload = function() {
             generateSamples();
@@ -154,6 +477,7 @@
             document.getElementById('sampleCount').textContent = sampleCount;
             generateSamples();
             generateBTXSamples();
+            refreshReassignDropdowns();
         }
         
         function removeSample() {
@@ -162,6 +486,7 @@
                 document.getElementById('sampleCount').textContent = sampleCount;
                 generateSamples();
                 generateBTXSamples();
+                refreshReassignDropdowns();
             }
         }
         
